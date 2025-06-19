@@ -2,6 +2,7 @@
 // Komponen AdminDashboard utama yang terintegrasi dengan backend PHP
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Cookies from 'js-cookie'; // Import library js-cookie
 // URL base untuk script PHP Anda di Laragon.
 const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC'; // Untuk users, stats
 const MODULE_API_BASE_URL = `http://localhost/COBAK_REACT/SRC/penjadwalan`; // Untuk courses, schedules, dan classes
@@ -29,6 +30,7 @@ const AddEditUserModal = ({
   const [password, setPassword] = useState('');
   const [studentClassLevel, setStudentClassLevel] = useState(isEditMode ? (editingUser.student_class_level || '') : '');
   const [teacherMainSubject, setTeacherMainSubject] = useState(isEditMode ? (editingUser.teacher_main_subject || '') : '');
+  // State status dihilangkan karena status online/offline otomatis
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -56,7 +58,7 @@ const AddEditUserModal = ({
         setTeacherMainSubject('');
     } else if (userType === 'teacher') {
         setStudentClassLevel('');
-    } else {
+    } else { // admin
         setTeacherMainSubject('');
         setStudentClassLevel('');
     }
@@ -79,7 +81,7 @@ const AddEditUserModal = ({
         setError('Kelas siswa wajib dipilih.'); setIsLoading(false); return;
     }
 
-    const endpoint = isEditMode ? `${API_BASE_URL}/update_user.php` : `${API_BASE_URL}/add_user.php`; //
+    const endpoint = isEditMode ? `${API_BASE_URL}/update_user.php` : `${API_BASE_URL}/add_user.php`;
 
     const userData = {
       id: isEditMode ? editingUser.id : undefined,
@@ -87,7 +89,7 @@ const AddEditUserModal = ({
       name: name,
       email: email,
       ...(password && { password: password }),
-      status: editingUser?.status || 'Active',
+      // Status tidak dikirim di sini karena dikelola otomatis oleh login/logout
       ...(userType === 'student' && { student_class_level: studentClassLevel }),
       ...(userType === 'teacher' && { teacher_main_subject: teacherMainSubject }),
     };
@@ -120,7 +122,7 @@ const AddEditUserModal = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4" id="modal-backdrop">
-      
+
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -130,15 +132,14 @@ const AddEditUserModal = ({
           {error && <p className="text-red-500 text-sm mb-2 p-3 bg-red-100 rounded-md">{error}</p>}
           {successMessage && <p className="text-green-500 text-sm mb-2 p-3 bg-green-100 rounded-md">{successMessage}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ... (semua input field tetap sama) ... */}
             <div>
               <label htmlFor="user-type-modal" className="block text-sm font-medium text-gray-700">Tipe Pengguna</label>
               <select
                 id="user-type-modal"
                 value={userType}
                 onChange={(e) => setUserType(e.target.value)}
-                disabled={isLoading || isEditMode}
-                className="mt-1 block w-full input-field"> {/* */}
+                disabled={isLoading || isEditMode} // userType tidak bisa diubah saat edit
+                className="mt-1 block w-full input-field">
                 <option value="teacher">Guru</option>
                 <option value="student">Siswa</option>
                 <option value="admin">Admin</option>
@@ -146,11 +147,11 @@ const AddEditUserModal = ({
             </div>
             <div>
               <label htmlFor="name-modal" className="block text-sm font-medium text-gray-700">Nama Lengkap</label>
-              <input type="text" id="name-modal" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} className="mt-1 block w-full input-field" /> {/* */}
+              <input type="text" id="name-modal" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} className="mt-1 block w-full input-field" />
             </div>
             <div>
               <label htmlFor="email-modal" className="block text-sm font-medium text-gray-700">Email</label>
-              <input type="email" id="email-modal" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} className="mt-1 block w-full input-field" /> {/* */}
+              <input type="email" id="email-modal" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} className="mt-1 block w-full input-field" />
             </div>
 
             {userType === 'student' && (
@@ -162,7 +163,7 @@ const AddEditUserModal = ({
                   onChange={(e) => setStudentClassLevel(e.target.value)}
                   disabled={isLoading || isLoadingDropdownData || classesList.length === 0}
                   required
-                  className="mt-1 block w-full input-field"> {/* */}
+                  className="mt-1 block w-full input-field">
                   <option value="">
                     {isLoadingDropdownData ? "Memuat kelas..." : (classesList.length === 0 ? "Tidak ada kelas" : "-- Pilih Kelas --")}
                   </option>
@@ -182,7 +183,7 @@ const AddEditUserModal = ({
                   value={teacherMainSubject}
                   onChange={(e) => setTeacherMainSubject(e.target.value)}
                   disabled={isLoading || isLoadingDropdownData || coursesList.length === 0}
-                  className="mt-1 block w-full input-field"> {/* */}
+                  className="mt-1 block w-full input-field">
                   <option value="">
                      {isLoadingDropdownData ? "Memuat mapel..." : (coursesList.length === 0 ? "Tidak ada mapel" : "-- Pilih Mapel Utama --")}
                   </option>
@@ -194,12 +195,13 @@ const AddEditUserModal = ({
               </div>
             )}
 
+            {/* Field Status Pengguna dihilangkan karena status kini otomatis berdasarkan login/logout */}
+
             <div>
               <label htmlFor="password-modal" className="block text-sm font-medium text-gray-700">Kata Sandi {isEditMode ? '(Kosongkan jika tidak diubah)' : ''}</label>
-              <input type="password" id="password-modal" value={password} onChange={(e) => setPassword(e.target.value)} required={!isEditMode} disabled={isLoading} placeholder={isEditMode ? "Tidak diubah" : "Min. 6 karakter"} className="mt-1 block w-full input-field" /> {/* */}
+              <input type="password" id="password-modal" value={password} onChange={(e) => setPassword(e.target.value)} required={!isEditMode} disabled={isLoading} placeholder={isEditMode ? "Tidak diubah" : "Min. 6 karakter"} className="mt-1 block w-full input-field" />
             </div>
 
-            {/* MODIFIKASI TOMBOL DI SINI */}
             <div className="flex justify-end space-x-3 pt-2">
               <button
                 type="button"
@@ -258,7 +260,7 @@ const UserTable = ({ userType, onEdit, onDelete, needsRefresh, searchTerm, sortO
   }, [userType]);
 
   useEffect(() => { fetchData(); }, [fetchData, needsRefresh]);
-  
+
   // NEW: Memoized, filtered, and sorted data
   const processedUsers = useMemo(() => {
       let filtered = [...users];
@@ -309,7 +311,12 @@ const UserTable = ({ userType, onEdit, onDelete, needsRefresh, searchTerm, sortO
               <td className="td-cell text-gray-500">
                 {userType === 'teachers' ? (user.teacher_main_subject || '-') : (user.student_class_level || '-')}
               </td>
-              <td className="td-cell"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{user.status || 'N/A'}</span></td>
+              {/* Menampilkan Status Online/Offline */}
+              <td className="td-cell">
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {user.status === 'active' ? 'Online' : 'Offline'}
+                </span>
+              </td>
               <td className="td-cell text-sm font-medium">
                 <button onClick={() => onEdit(user)} className="text-indigo-600 hover:text-indigo-800 font-medium py-1 px-2 rounded-md hover:bg-indigo-50 transition-colors duration-150 mr-2">Edit</button>
                 <button onClick={() => onDelete(user.id, userType)} className="text-red-600 hover:text-red-800 font-medium py-1 px-2 rounded-md hover:bg-red-50 transition-colors duration-150">Delete</button>
@@ -328,12 +335,12 @@ const UserManagementView = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   const [classesList, setClassesList] = useState([]);
   const [coursesList, setCoursesList] = useState([]);
   const [isLoadingDropdownData, setIsLoadingDropdownData] = useState(false);
   const [dropdownError, setDropdownError] = useState('');
-  
+
   // State untuk search dan filter
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('name_asc');
@@ -345,7 +352,7 @@ const UserManagementView = () => {
       setDropdownError('');
       try {
         const classesPromise = fetch(`${MODULE_API_BASE_URL}/get_classes.php`);
-        const coursesPromise = fetch(`${MODULE_API_BASE_URL}/get_courses.php`); //
+        const coursesPromise = fetch(`${MODULE_API_BASE_URL}/get_courses.php`);
 
         const [classesRes, coursesRes] = await Promise.all([classesPromise, coursesPromise]);
 
@@ -438,8 +445,7 @@ const UserManagementView = () => {
       // 3. Jika Tingkat sama, urutkan berdasarkan Nomor Kelas
       return infoA.classNumber - infoB.classNumber;
   };
-  
-  // ... (baris "const sortedClassesForFilter = useMemo(...)"" TIDAK PERLU DIUBAH)
+
   const sortedClassesForFilter = useMemo(() => {
     return [...classesList].sort(sortClassesForFilter);
   }, [classesList]);
@@ -448,7 +454,7 @@ const UserManagementView = () => {
   const handleDeleteUser = async (userId, userRoleType) => {
     if (window.confirm(`Yakin ingin menghapus pengguna ini?`)) {
       try {
-        const response = await fetch(`${API_BASE_URL}/delete_user.php`, { //
+        const response = await fetch(`${API_BASE_URL}/delete_user.php`, {
           method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: userId })
         });
         if (!response.ok) { const errTxt = await response.text(); throw new Error(`HTTP error! status: ${response.status}, ${errTxt.substring(0,100)}`);}
@@ -478,13 +484,13 @@ const UserManagementView = () => {
           <button onClick={() => setActiveTab('teachers')} className={`py-2 px-4 font-medium hover:text-blue-600 border-b-2 ${activeTab === 'teachers' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent'}`}>Guru</button>
           <button onClick={() => setActiveTab('students')} className={`py-2 px-4 font-medium hover:text-blue-600 border-b-2 ${activeTab === 'students' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent'}`}>Siswa</button>
         </div>
-        
+
         {/* Search and Filter Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
             <div className="relative w-full sm:w-64">
-                <input 
-                    type="text" 
-                    placeholder={`Cari ${activeTab === 'teachers' ? 'guru' : 'siswa'}...`} 
+                <input
+                    type="text"
+                    placeholder={`Cari ${activeTab === 'teachers' ? 'guru' : 'siswa'}...`}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -514,7 +520,6 @@ const UserManagementView = () => {
                         disabled={isLoadingDropdownData || sortedClassesForFilter.length === 0}
                     >
                         <option value="">Semua Kelas</option>
-                        {/* ++ UBAH BARIS INI ++ */}
                         {sortedClassesForFilter.map(cls => (
                             <option key={cls.id} value={cls.class_name}>{cls.class_name}</option>
                         ))}
@@ -566,7 +571,7 @@ const AddEditCourseModal = ({ isOpen, onClose, onCourseSaved, editingCourse }) =
         e.preventDefault(); setError(''); setSuccessMessage(''); setIsLoading(true);
         if (!courseCode || !courseName) { setError('Kode dan Nama Mata Pelajaran wajib diisi.'); setIsLoading(false); return; }
 
-        const endpoint = isEditMode ? `${MODULE_API_BASE_URL}/update_course.php` : `${MODULE_API_BASE_URL}/create_course.php`; //
+        const endpoint = isEditMode ? `${MODULE_API_BASE_URL}/update_course.php` : `${MODULE_API_BASE_URL}/create_course.php`;
         const courseData = { id: isEditMode ? editingCourse.id : undefined, course_code: courseCode, course_name: courseName, description };
 
         try {
@@ -591,11 +596,10 @@ const AddEditCourseModal = ({ isOpen, onClose, onCourseSaved, editingCourse }) =
                 {error && <p className="text-red-500 text-sm mb-2 p-3 bg-red-100 rounded-md">{error}</p>}
                 {successMessage && <p className="text-green-500 text-sm mb-2 p-3 bg-green-100 rounded-md">{successMessage}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div><label htmlFor="courseCode" className="block text-sm font-medium">Kode</label><input type="text" id="courseCode" value={courseCode} onChange={e => setCourseCode(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div> {/* */}
-                    <div><label htmlFor="courseName" className="block text-sm font-medium">Nama Mata Pelajaran</label><input type="text" id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div> {/* */}
-                    <div><label htmlFor="description" className="block text-sm font-medium">Deskripsi</label><textarea id="description" value={description} onChange={e => setDescription(e.target.value)} disabled={isLoading} className="mt-1 w-full input-field" rows="3"></textarea></div> {/* */}
-                    
-                    {/* MODIFIKASI TOMBOL DI SINI */}
+                    <div><label htmlFor="courseCode" className="block text-sm font-medium">Kode</label><input type="text" id="courseCode" value={courseCode} onChange={e => setCourseCode(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div>
+                    <div><label htmlFor="courseName" className="block text-sm font-medium">Nama Mata Pelajaran</label><input type="text" id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div>
+                    <div><label htmlFor="description" className="block text-sm font-medium">Deskripsi</label><textarea id="description" value={description} onChange={e => setDescription(e.target.value)} disabled={isLoading} className="mt-1 w-full input-field" rows="3"></textarea></div>
+
                     <div className="flex justify-end space-x-3 pt-2">
                         <button
                             type="button"
@@ -678,13 +682,13 @@ const CoursesView = () => {
             </div>
 
             {courses.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5"> {/* Border dihilangkan dari sini juga jika pesan kosong ingin tanpa border */}
+                <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5">
                     Belum ada mata pelajaran.
                 </div>
             ) : (
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden"> {/* Kelas 'border' DIHILANGKAN dari sini */}
-                    <div className="overflow-x-auto p-6"> {/* Padding tetap di dalam agar konten tabel tidak mepet ke shadow */}
-                        <table className="min-w-full divide-y divide-gray-200"> {/* Garis internal tetap ada */}
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto p-6">
+                        <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="th-cell">Kode</th>
@@ -693,7 +697,7 @@ const CoursesView = () => {
                                     <th className="th-cell">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200"> {/* Garis internal antar baris tbody tetap ada */}
+                            <tbody className="bg-white divide-y divide-gray-200">
                                 {courses.map(course => (
                                     <tr key={course.id} className="hover:bg-gray-50">
                                         <td className="td-cell">{course.course_code}</td>
@@ -800,7 +804,7 @@ const AddEditClassModal = ({ isOpen, onClose, onClassSaved, editingClass, teache
                             required
                             disabled={isLoading}
                             placeholder="Contoh: X IPA 1"
-                            className="mt-1 block w-full input-field" /> {/* */}
+                            className="mt-1 block w-full input-field" />
                     </div>
                     <div>
                         <label htmlFor="homeroom-teacher-modal" className="block text-sm font-medium text-gray-700">Wali Kelas (Opsional)</label>
@@ -809,7 +813,7 @@ const AddEditClassModal = ({ isOpen, onClose, onClassSaved, editingClass, teache
                             value={homeroomTeacherId}
                             onChange={(e) => setHomeroomTeacherId(e.target.value)}
                             disabled={isLoading || teachersList.length === 0}
-                            className="mt-1 block w-full input-field" > {/* */}
+                            className="mt-1 block w-full input-field" >
                             <option value="">-- Pilih Wali Kelas --</option>
                             {teachersList.map(teacher => (
                                 <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
@@ -818,7 +822,6 @@ const AddEditClassModal = ({ isOpen, onClose, onClassSaved, editingClass, teache
                         {teachersList.length === 0 && <p className="text-xs text-gray-500 mt-1">Tidak ada data guru tersedia.</p>}
                     </div>
 
-                    {/* MODIFIKASI TOMBOL DI SINI */}
                     <div className="flex justify-end space-x-3 pt-3">
                         <button
                             type="button"
@@ -843,7 +846,7 @@ const AddEditClassModal = ({ isOpen, onClose, onClassSaved, editingClass, teache
     );
 };
 
-// ++ NEW ++ Komponen Modal Detail Kelas
+// Komponen Modal Detail Kelas
 const ClassDetailsModal = ({ isOpen, onClose, classItem, students, isLoading }) => {
     if (!isOpen) return null;
 
@@ -929,7 +932,7 @@ const ClassesView = () => {
     setError('');
     try {
       const classesPromise = fetch(`${MODULE_API_BASE_URL}/get_classes.php`);
-      const teachersPromise = fetch(`${API_BASE_URL}/get_users.php?role_filter=teacher`); //
+      const teachersPromise = fetch(`${API_BASE_URL}/get_users.php?role_filter=teacher`);
 
       const [classesRes, teachersRes] = await Promise.all([classesPromise, teachersPromise]);
 
@@ -938,7 +941,7 @@ const ClassesView = () => {
       }
       const classesData = await classesRes.json();
       if (!classesData.success) throw new Error(classesData.message || "Gagal mengambil data kelas.");
-      
+
       const sortedClasses = (classesData.data || []).sort((a, b) => {
         const levelA = getClassLevelValue(a.class_name);
         const levelB = getClassLevelValue(b.class_name);
@@ -966,7 +969,7 @@ const ClassesView = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); 
+  }, []);
 
   useEffect(() => {
     fetchAllData();
@@ -1001,7 +1004,7 @@ const ClassesView = () => {
       }
     }
   };
-  
+
     // NEW: Handler untuk membuka modal detail
     const handleViewDetails = async (classItem) => {
         setIsDetailsModalOpen(true);
@@ -1042,7 +1045,7 @@ const ClassesView = () => {
     setIsModalOpen(false);
     setEditingClass(null);
   };
-  
+
   const closeDetailsModal = () => {
     setIsDetailsModalOpen(false);
     setSelectedClassForDetails(null);
@@ -1212,9 +1215,9 @@ const AddEditScheduleModal = ({ isOpen, onClose, onScheduleSaved, editingSchedul
         const fetchDataForDropdowns = async () => {
             setIsLoadingDropdown(true); setError('');
             try {
-                const coursesPromise = fetch(`${MODULE_API_BASE_URL}/get_courses.php`); //
-                const teachersPromise = fetch(`${API_BASE_URL}/get_users.php?role_filter=teacher`); //
-                const allClassesPromise = fetch(`${MODULE_API_BASE_URL}/get_classes.php`); // Untuk daftar kelas
+                const coursesPromise = fetch(`${MODULE_API_BASE_URL}/get_courses.php`);
+                const teachersPromise = fetch(`${API_BASE_URL}/get_users.php?role_filter=teacher`);
+                const allClassesPromise = fetch(`${MODULE_API_BASE_URL}/get_classes.php`);
 
                 const [coursesRes, teachersRes, allClassesRes] = await Promise.all([coursesPromise, teachersPromise, allClassesPromise]);
 
@@ -1264,7 +1267,7 @@ const AddEditScheduleModal = ({ isOpen, onClose, onScheduleSaved, editingSchedul
             setError('Semua field wajib diisi (kecuali nomor ruangan).'); setIsLoading(false); return;
         }
 
-        const endpoint = isEditMode ? `${MODULE_API_BASE_URL}/update_schedule.php` : `${MODULE_API_BASE_URL}/create_schedule.php`; //
+        const endpoint = isEditMode ? `${MODULE_API_BASE_URL}/update_schedule.php` : `${MODULE_API_BASE_URL}/create_schedule.php`;
         const scheduleData = { id: isEditMode ? editingSchedule.id : undefined, course_id: courseId, teacher_id: teacherId, student_class_level: studentClassLevel, day_of_week: dayOfWeek, start_time: startTime, end_time: endTime, room_number: roomNumber };
 
         try {
@@ -1288,32 +1291,30 @@ const AddEditScheduleModal = ({ isOpen, onClose, onScheduleSaved, editingSchedul
                 {error && <p className="text-red-500 text-sm mb-4 p-3 bg-red-100 rounded-md">{error}</p>}
                 {successMessage && <p className="text-green-500 text-sm mb-4 p-3 bg-green-100 rounded-md">{successMessage}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* ... (semua input field dan dropdown tetap sama) ... */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label htmlFor="courseIdSchedule" className="block text-sm font-medium">Mata Pelajaran</label><select id="courseIdSchedule" value={courseId} onChange={e => setCourseId(e.target.value)} required disabled={isLoading || isLoadingDropdown || courses.length === 0} className="mt-1 w-full input-field">{courses.length === 0 && !isLoadingDropdown ? <option>Tidak ada mapel</option> : <option value="">Pilih Mapel</option>}{courses.map(c => <option key={c.id} value={c.id}>{c.course_name} ({c.course_code})</option>)}</select></div> {/* */}
-                        <div><label htmlFor="teacherIdSchedule" className="block text-sm font-medium">Guru Pengampu</label><select id="teacherIdSchedule" value={teacherId} onChange={e => setTeacherId(e.target.value)} required disabled={isLoading || isLoadingDropdown || teachers.length === 0} className="mt-1 w-full input-field">{teachers.length === 0 && !isLoadingDropdown ? <option>Tidak ada guru</option> : <option value="">Pilih Guru</option>}{teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div> {/* */}
+                        <div><label htmlFor="courseIdSchedule" className="block text-sm font-medium">Mata Pelajaran</label><select id="courseIdSchedule" value={courseId} onChange={e => setCourseId(e.target.value)} required disabled={isLoading || isLoadingDropdown || courses.length === 0} className="mt-1 w-full input-field">{courses.length === 0 && !isLoadingDropdown ? <option>Tidak ada mapel</option> : <option value="">Pilih Mapel</option>}{courses.map(c => <option key={c.id} value={c.id}>{c.course_name} ({c.course_code})</option>)}</select></div>
+                        <div><label htmlFor="teacherIdSchedule" className="block text-sm font-medium">Guru Pengampu</label><select id="teacherIdSchedule" value={teacherId} onChange={e => setTeacherId(e.target.value)} required disabled={isLoading || isLoadingDropdown || teachers.length === 0} className="mt-1 w-full input-field">{teachers.length === 0 && !isLoadingDropdown ? <option>Tidak ada guru</option> : <option value="">Pilih Guru</option>}{teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
                     </div>
                     <div>
                         <label htmlFor="studentClassLevelSchedule" className="block text-sm font-medium">Untuk Kelas</label>
-                        <select 
-                            id="studentClassLevelSchedule" 
-                            value={studentClassLevel} 
-                            onChange={e => setStudentClassLevel(e.target.value)} 
-                            required 
-                            disabled={isLoading || isLoadingDropdown || allClasses.length === 0} 
-                            className="mt-1 w-full input-field"> {/* */}
+                        <select
+                            id="studentClassLevelSchedule"
+                            value={studentClassLevel}
+                            onChange={e => setStudentClassLevel(e.target.value)}
+                            required
+                            disabled={isLoading || isLoadingDropdown || allClasses.length === 0}
+                            className="mt-1 w-full input-field">
                             {allClasses.length === 0 && !isLoadingDropdown ? <option>Tidak ada kelas</option> : <option value="">Pilih Kelas</option>}
                             {allClasses.map(cls => <option key={cls.id} value={cls.class_name}>{cls.class_name}</option>)}
                         </select>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label htmlFor="dayOfWeekSchedule" className="block text-sm font-medium">Hari</label><select id="dayOfWeekSchedule" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field">{days.map(d => <option key={d} value={d}>{d}</option>)}</select></div> {/* */}
-                        <div><label htmlFor="startTimeSchedule" className="block text-sm font-medium">Waktu Mulai</label><input type="time" id="startTimeSchedule" value={startTime} onChange={e => setStartTime(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div> {/* */}
-                        <div><label htmlFor="endTimeSchedule" className="block text-sm font-medium">Waktu Selesai</label><input type="time" id="endTimeSchedule" value={endTime} onChange={e => setEndTime(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div> {/* */}
+                        <div><label htmlFor="dayOfWeekSchedule" className="block text-sm font-medium">Hari</label><select id="dayOfWeekSchedule" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field">{days.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                        <div><label htmlFor="startTimeSchedule" className="block text-sm font-medium">Waktu Mulai</label><input type="time" id="startTimeSchedule" value={startTime} onChange={e => setStartTime(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div>
+                        <div><label htmlFor="endTimeSchedule" className="block text-sm font-medium">Waktu Selesai</label><input type="time" id="endTimeSchedule" value={endTime} onChange={e => setEndTime(e.target.value)} required disabled={isLoading} className="mt-1 w-full input-field" /></div>
                     </div>
-                    <div><label htmlFor="roomNumberSchedule" className="block text-sm font-medium">Nomor Ruangan <span className="text-xs">(Opsional)</span></label><input type="text" id="roomNumberSchedule" value={roomNumber} onChange={e => setRoomNumber(e.target.value)} disabled={isLoading} className="mt-1 w-full input-field" /></div> {/* */}
-                    
-                    {/* MODIFIKASI TOMBOL DI SINI */}
+                    <div><label htmlFor="roomNumberSchedule" className="block text-sm font-medium">Nomor Ruangan <span className="text-xs">(Opsional)</span></label><input type="text" id="roomNumberSchedule" value={roomNumber} onChange={e => setRoomNumber(e.target.value)} disabled={isLoading} className="mt-1 w-full input-field" /></div>
+
                     <div className="flex justify-end space-x-3 pt-4">
                         <button
                             type="button"
@@ -1357,7 +1358,7 @@ const SchedulesView = () => {
             if (!contentType || !contentType.includes("application/json")) { throw new Error(`Respons server (schedules) bukan JSON.`); }
             const data = await response.json();
             if (!data.success) throw new Error(data.message || "Gagal mengambil data jadwal dari server.");
-            
+
             const currentSchedules = data.data || [];
             setSchedules(currentSchedules);
 
@@ -1380,9 +1381,9 @@ const SchedulesView = () => {
 
     const handleClassCardClick = (className) => {
         if (selectedClass === className) {
-            setSelectedClass(null); 
+            setSelectedClass(null);
         } else {
-            setSelectedClass(className); 
+            setSelectedClass(className);
         }
     };
 
@@ -1426,7 +1427,7 @@ const SchedulesView = () => {
                 <h3 className="text-xl font-semibold text-gray-700 mb-3">Pilih Kelas:</h3>
                 {isLoading && uniqueClasses.length === 0 && <p className="text-gray-500">Memuat daftar kelas...</p>}
                 {!isLoading && uniqueClasses.length === 0 && (
-                    <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5"> {/* Border dihilangkan dari sini juga */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5">
                         Belum ada jadwal untuk kelas manapun.
                     </div>
                 )}
@@ -1451,13 +1452,13 @@ const SchedulesView = () => {
                     <h3 className="text-lg font-semibold mb-4 text-gray-700">Detail Jadwal untuk Kelas: <span className="text-blue-600">{selectedClass}</span></h3>
                     {isLoading && filteredSchedules.length === 0 && <p className="text-center text-gray-500 py-4">Memuat jadwal kelas {selectedClass}...</p>}
                     {!isLoading && filteredSchedules.length === 0 ? (
-                        <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5"> {/* Border dihilangkan dari sini juga */}
+                        <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500 text-center py-5">
                             Tidak ada jadwal untuk kelas {selectedClass}.
                         </div>
                     ) : (
-                        <div className="bg-white rounded-xl shadow-sm overflow-hidden"> {/* Kelas 'border' DIHILANGKAN dari sini */}
-                            <div className="overflow-x-auto p-6"> {/* Padding tetap di dalam */}
-                                <table className="min-w-full divide-y divide-gray-200"> {/* Garis internal tetap ada */}
+                        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto p-6">
+                                <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="th-cell">Hari</th>
@@ -1468,7 +1469,7 @@ const SchedulesView = () => {
                                             <th className="th-cell">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200"> {/* Garis internal antar baris tbody tetap ada */}
+                                    <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredSchedules.map(sch => (
                                             <tr key={sch.id} className="hover:bg-gray-50">
                                                 <td className="td-cell">{sch.day_of_week}</td>
@@ -1494,7 +1495,7 @@ const SchedulesView = () => {
                 </>
             )}
             {!selectedClass && uniqueClasses.length > 0 && !isLoading && (
-                 <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500"> {/* Border dihilangkan dari sini juga */}
+                 <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500">
                     <p><Icon classes="fas fa-info-circle mr-2" />Pilih salah satu kelas di atas untuk melihat detail jadwalnya.</p>
                 </div>
             )}
@@ -1514,7 +1515,7 @@ const DashboardView = ({ onNavigate }) => { // Terima onNavigate sebagai prop
       setIsLoadingStats(true); setStatsError('');
       try {
         // Asumsi get_dashboard_stats.php akan mengembalikan juga class_count dan course_count
-        const response = await fetch(`${API_BASE_URL}/get_dashboard_stats.php`); //
+        const response = await fetch(`${API_BASE_URL}/get_dashboard_stats.php`);
         if (!response.ok) { const errTxt = await response.text(); throw new Error(`HTTP error! status: ${response.status}, ${errTxt.substring(0,100)}`);}
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) { throw new Error(`Respons server (stats) bukan JSON.`); }
@@ -1538,8 +1539,8 @@ const DashboardView = ({ onNavigate }) => { // Terima onNavigate sebagai prop
   const statsData = [
     { title: 'Total Siswa', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : stats.student_count, icon: 'fa-user-graduate', color: 'blue' },
     { title: 'Total Guru', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : stats.teacher_count, icon: 'fa-chalkboard-teacher', color: 'green' },
-    { title: 'Total Kelas', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : (stats.class_count || 'N/A'), icon: 'fa-school', color: 'purple' },
-    { title: 'Total Mapel', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : (stats.course_count || 'N/A'), icon: 'fa-book', color: 'yellow' },
+    { title: 'Total Kelas', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : (stats.class_count || 0), icon: 'fa-school', color: 'purple' }, // Pastikan 0 jika N/A
+    { title: 'Total Mapel', value: isLoadingStats ? <Icon classes="fas fa-spinner fa-spin"/> : (stats.course_count || 0), icon: 'fa-book', color: 'yellow' }, // Pastikan 0 jika N/A
   ];
 
   const activities = [
@@ -1617,8 +1618,8 @@ const DashboardView = ({ onNavigate }) => { // Terima onNavigate sebagai prop
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Aksi Cepat</h2>
           <div className="grid grid-cols-2 gap-4">
             {quickActions.map(action => (
-              <button 
-                key={action.label} 
+              <button
+                key={action.label}
                 onClick={() => handleQuickActionClick(action.view)} // Menggunakan handler baru
                 className={`${colorClasses[action.color]?.buttonBg || 'bg-gray-100'} ${colorClasses[action.color]?.buttonHoverBg || 'hover:bg-gray-200'} ${colorClasses[action.color]?.buttonText || 'text-gray-800'} p-4 rounded-lg flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105`}
                 style={{ minHeight: '100px' }} // Menjamin tinggi tombol konsisten
@@ -1636,7 +1637,7 @@ const DashboardView = ({ onNavigate }) => { // Terima onNavigate sebagai prop
 
 
 // --- Komponen Sidebar Admin ---
-const AdminSidebar = ({ onNavigate, activeView, onLogout, isSidebarOpen }) => {
+const AdminSidebar = ({ onNavigate, activeView, onLogout, isSidebarOpen, user }) => {
   const navItemsAdmin = [
     { name: 'Dashboard', icon: 'fa-home', view: 'dashboard' },
     { name: 'Users', icon: 'fa-users', view: 'users' },
@@ -1646,18 +1647,23 @@ const AdminSidebar = ({ onNavigate, activeView, onLogout, isSidebarOpen }) => {
     { name: 'Reports', icon: 'fa-chart-bar', view: 'reports' },
     { name: 'Settings', icon: 'fa-cog', view: 'settings' },
   ];
-  const adminUser = { name: "Admin Utama", role: "Administrator", avatarUrl: "https://placehold.co/50x50/FF6347/FFFFFF?text=AU", logoUrl: "https://placehold.co/40x40/4A5568/FFFFFF?text=A" };
+  // const adminUser = { name: "Admin Utama", role: "Administrator", avatarUrl: "https://placehold.co/50x50/FF6347/FFFFFF?text=AU", logoUrl: "https://placehold.co/40x40/4A5568/FFFFFF?text=A" };
 
   return (
     <div className={`sidebar bg-white text-gray-800 w-64 min-h-screen shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static fixed md:z-40`}>
       <div className="p-4 flex items-center space-x-3 border-b border-gray-200">
-        <img src={adminUser.logoUrl} alt="Logo" className="h-10 w-10 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/ffffff?text=L"; }}/>
+        <img src={"https://placehold.co/40x40/4A5568/FFFFFF?text=A"} alt="Logo" className="h-10 w-10 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/ffffff?text=L"; }}/>
         <span className="logo-text font-bold text-xl text-gray-800">Attendance Admin</span>
       </div>
       <div className="p-4">
         <div className="flex items-center space-x-3 mb-6">
-          <img src={adminUser.avatarUrl} alt="User" className="h-12 w-12 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/50x50/cccccc/ffffff?text=U"; }}/>
-          <div><p className="font-medium text-gray-800">{adminUser.name}</p><p className="text-sm text-gray-500">{adminUser.role}</p></div>
+          <img
+            src={`https://placehold.co/50x50/FF6347/FFFFFF?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'AU'}`}
+            alt="User"
+            className="h-12 w-12 rounded-full object-cover"
+            onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/50x50/cccccc/ffffff?text=U"; }}
+          />
+          <div><p className="font-medium text-gray-800">{user.name || "Admin"}</p><p className="text-sm text-gray-500">{user.role || "Administrator"}</p></div>
         </div>
         <nav className="space-y-2">
           {navItemsAdmin.map(item => (
@@ -1690,19 +1696,19 @@ const AdminMainContent = ({ activeView, onToggleSidebar, onNavigate }) => { // T
         <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
         <button onClick={onToggleSidebar} className="p-2 rounded-lg hover:bg-gray-200 md:hidden"><Icon classes="fas fa-bars text-gray-700" /></button>
       </div>
-      {activeView === 'dashboard' && <DashboardView onNavigate={onNavigate} />} {/* Teruskan onNavigate */}
+      {activeView === 'dashboard' && <DashboardView onNavigate={onNavigate} />}
       {activeView === 'users' && <UserManagementView />}
       {activeView === 'courses' && <CoursesView />}
       {activeView === 'classes' && <ClassesView />}
       {activeView === 'schedules' && <SchedulesView />}
-      {activeView === 'reports' && <div className="placeholder-view">Tampilan Laporan (Belum Diimplementasikan)</div>} {/* */}
-      {activeView === 'settings' && <div className="placeholder-view">Tampilan Pengaturan (Belum Diimplementasikan)</div>} {/* */}
+      {activeView === 'reports' && <div className="placeholder-view">Tampilan Laporan (Belum Diimplementasikan)</div>}
+      {activeView === 'settings' && <div className="placeholder-view">Tampilan Pengaturan (Belum Diimplementasikan)</div>}
     </div>
   );
 };
 
 // --- Komponen Aplikasi Utama (Admin Dashboard) ---
-export default function AdminDashboard({ onLogout }) {
+export default function AdminDashboard({ onLogout, user }) {
   const [activeView, setActiveView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -1725,16 +1731,17 @@ export default function AdminDashboard({ onLogout }) {
 
   return (
     <div className="flex min-h-screen font-sans antialiased text-gray-900">
-      <AdminSidebar 
-        onNavigate={handleNavigate} 
-        activeView={activeView} 
-        isSidebarOpen={isSidebarOpen} 
-        onLogout={handleAdminLogout} 
+      <AdminSidebar
+        onNavigate={handleNavigate}
+        activeView={activeView}
+        isSidebarOpen={isSidebarOpen}
+        onLogout={handleAdminLogout}
+        user={user}
       />
-      <AdminMainContent 
-        activeView={activeView} 
-        onToggleSidebar={toggleSidebar} 
-        onNavigate={handleNavigate} // Teruskan handleNavigate sebagai onNavigate
+      <AdminMainContent
+        activeView={activeView}
+        onToggleSidebar={toggleSidebar}
+        onNavigate={handleNavigate}
       />
     </div>
   );

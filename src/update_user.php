@@ -1,18 +1,22 @@
 <?php
 // update_user.php
+// FILE INI TIDAK MENGUBAH STATUS 'active'/'inactive' OTOMATIS
+// Status 'active'/'inactive' akan diubah hanya melalui login.php dan logout_status.php
+// Jika Anda ingin admin bisa mengaktifkan/menonaktifkan akun secara manual,
+// ini adalah tempat yang tepat untuk menambahkan field 'account_enabled' terpisah.
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS"); 
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header('Content-Type: application/json');
 include('db.php');
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') { http_response_code(200); exit(); }
 $response = ['success' => false, 'message' => 'Permintaan tidak valid.'];
-if ($_SERVER['REQUEST_METHOD'] == 'POST') { 
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $input = json_decode(file_get_contents('php://input'), TRUE);
     if (isset($input['id'])) {
         $id = filter_var($input['id'], FILTER_VALIDATE_INT);
         if (!$id) { $response['message'] = 'ID tidak valid.'; http_response_code(400); /* ... exit ... */ }
-        
+
         $fieldsToUpdate = []; $params = []; $types = "";
         if (isset($input['name']) && !empty(trim($input['name']))) { $fieldsToUpdate[] = "name = ?"; $params[] = trim($input['name']); $types .= "s"; }
         if (isset($input['email']) && filter_var(trim($input['email']), FILTER_VALIDATE_EMAIL)) {
@@ -27,6 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (array_key_exists('student_class_level', $input)) { $fieldsToUpdate[] = "student_class_level = ?"; $params[] = trim($input['student_class_level']) ?: null; $types .= "s"; } // Allow empty string to set NULL
         if (array_key_exists('teacher_main_subject', $input)) { $fieldsToUpdate[] = "teacher_main_subject = ?"; $params[] = trim($input['teacher_main_subject']) ?: null; $types .= "s"; } // Allow empty string to set NULL
 
+        // Perhatian: Kolom 'status' tidak lagi diupdate dari sini.
+        // Status 'active'/'inactive' diubah hanya oleh login.php dan logout_status.php
+
         if (isset($input['password']) && !empty(trim($input['password']))) {
             $passwordInput = trim($input['password']);
             if (strlen($passwordInput) < 6) { $response['message'] = 'Password min 6 karakter.'; http_response_code(400); /* ... exit ... */ }
@@ -38,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $sql = "UPDATE users SET " . implode(", ", $fieldsToUpdate) . " WHERE id = ?";
             $stmt = $conn->prepare($sql);
             if ($stmt) {
-                $stmt->bind_param($types, ...$params); 
+                $stmt->bind_param($types, ...$params);
                 if ($stmt->execute()) {
                     $response = ['success' => true, 'message' => ($stmt->affected_rows > 0 ? 'Pengguna diperbarui.' : 'Tidak ada perubahan.') ];
                     http_response_code(200);

@@ -2,6 +2,7 @@
 // Pastikan Tailwind CSS dan Font Awesome sudah terkonfigurasi di proyek Anda
 
 import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie'; // Import library js-cookie
 
 // Komponen Helper untuk Ikon (bisa diimpor dari file terpisah)
 const Icon = ({ classes }) => <i className={classes}></i>;
@@ -11,9 +12,9 @@ const Sidebar = ({ user, navItems, onNavigate, activeView, onLogout, isSidebarOp
   return (
     <div className={`sidebar bg-white text-gray-800 w-64 min-h-screen shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static fixed md:z-40`}>
       <div className="p-4 flex items-center space-x-3 border-b border-gray-200">
-        <img 
-          src={user.logoUrl || `https://placehold.co/40x40/3B82F6/FFFFFF?text=${logoText.substring(0,1)}S`} 
-          alt="Logo" 
+        <img
+          src={user.logoUrl || `https://placehold.co/40x40/3B82F6/FFFFFF?text=${logoText.substring(0,1)}S`}
+          alt="Logo"
           className="h-10 w-10 rounded-full object-cover"
           onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/ffffff?text=L"; }}
         />
@@ -21,9 +22,9 @@ const Sidebar = ({ user, navItems, onNavigate, activeView, onLogout, isSidebarOp
       </div>
       <div className="p-4">
         <div className="flex items-center space-x-3 mb-6">
-          <img 
-            src={user.avatarUrl || `https://placehold.co/50x50/E2E8F0/A0AEC0?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'AU'}`} 
-            alt="User" 
+          <img
+            src={user.avatarUrl || `https://placehold.co/50x50/E2E8F0/A0AEC0?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'AU'}`}
+            alt="User"
             className="h-12 w-12 rounded-full object-cover"
             onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/50x50/cccccc/ffffff?text=U"; }}
           />
@@ -34,13 +35,13 @@ const Sidebar = ({ user, navItems, onNavigate, activeView, onLogout, isSidebarOp
         </div>
         <nav className="space-y-2">
           {navItems.map(item => (
-            <a 
-              key={item.name} 
-              href={item.href || "#"} 
-              onClick={(e) => { 
+            <a
+              key={item.name}
+              href={item.href || "#"}
+              onClick={(e) => {
                 if (item.onClick) {
                   e.preventDefault();
-                  item.onClick(item.view); 
+                  item.onClick(item.view);
                 } else if (onNavigate) {
                   e.preventDefault();
                   onNavigate(item.view);
@@ -66,18 +67,19 @@ const Sidebar = ({ user, navItems, onNavigate, activeView, onLogout, isSidebarOp
 };
 
 // Terima prop onLogout dari DashboardWrapper (via App.jsx)
-export default function StudentDashboard({ onLogout }) {
+export default function StudentDashboard({ onLogout, user }) { // Terima prop user
   const [activeView, setActiveView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [verificationCode, setVerificationCode] = useState(Array(6).fill(''));
   const [verificationResult, setVerificationResult] = useState('');
   const [showVerificationUI, setShowVerificationUI] = useState(false);
 
+  // Gunakan data user dari props
   const studentUser = {
-    name: "liakbar", 
-    role: "Student",
-    avatarUrl: "https://placehold.co/50x50/7C3AED/FFFFFF?text=LA", 
-    logoUrl: "https://placehold.co/40x40/10B981/FFFFFF?text=S" 
+    name: user.name,
+    role: user.role,
+    avatarUrl: `https://placehold.co/50x50/7C3AED/FFFFFF?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'LA'}`,
+    logoUrl: "https://placehold.co/40x40/10B981/FFFFFF?text=S"
   };
 
   const studentNavItems = [
@@ -87,7 +89,7 @@ export default function StudentDashboard({ onLogout }) {
     { name: 'Statistics', icon: 'fas fa-chart-bar', view: 'statistics' },
     { name: 'Settings', icon: 'fas fa-cog', view: 'settings' },
   ];
-  
+
   const handleNavigate = (viewName) => {
     setActiveView(viewName);
     if (viewName !== 'my-attendance') {
@@ -100,6 +102,7 @@ export default function StudentDashboard({ onLogout }) {
 
   // Fungsi handleStudentLogout akan memanggil onLogout dari props
   const handleStudentLogout = () => {
+    // onLogout sudah menangani penghapusan cookie dan pembaruan status di backend melalui App.jsx
     if (onLogout) {
       onLogout();
     } else {
@@ -109,7 +112,7 @@ export default function StudentDashboard({ onLogout }) {
 
   const handleVerificationCodeChange = (e, index) => {
     const { value } = e.target;
-    if (/^[0-9]?$/.test(value)) { 
+    if (/^[0-9]?$/.test(value)) {
       const newCode = [...verificationCode];
       newCode[index] = value;
       setVerificationCode(newCode);
@@ -118,7 +121,7 @@ export default function StudentDashboard({ onLogout }) {
       }
     }
   };
-  
+
   const handleVerificationKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !verificationCode[index] && index > 0 && e.target.previousElementSibling) {
       e.target.previousElementSibling.focus();
@@ -129,23 +132,23 @@ export default function StudentDashboard({ onLogout }) {
     const code = verificationCode.join('');
     if (code.length === 6) {
       console.log("Kode Verifikasi Absensi Siswa:", code);
-      setVerificationResult("Absensi berhasil diverifikasi!"); 
-      setVerificationCode(Array(6).fill('')); 
+      setVerificationResult("Absensi berhasil diverifikasi!");
+      setVerificationCode(Array(6).fill(''));
     } else {
       setVerificationResult("Harap masukkan 6 digit kode verifikasi.");
     }
   };
-  
+
   useEffect(() => {
     if (activeView === 'dashboard' || activeView === 'statistics') {
-        const canvas = document.getElementById('studentAttendanceChart'); 
+        const canvas = document.getElementById('studentAttendanceChart');
         if (canvas) {
           const ctx = canvas.getContext('2d');
             if (ctx) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#E9E9E9';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#60A5FA'; 
+                ctx.fillStyle = '#60A5FA';
                 ctx.font = "16px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText("Placeholder Student Attendance Chart", canvas.width / 2, canvas.height / 2);
@@ -166,7 +169,7 @@ export default function StudentDashboard({ onLogout }) {
     { name: "Chemistry Lab", details: "May 17, 02:00 PM - Lab 5", icon: "fas fa-flask", color: "green" },
     { name: "Physics", details: "May 18, 10:00 AM - Room 105", icon: "fas fa-atom", color: "purple" },
   ];
-  
+
   const colorClasses = {
     blue: { iconBg: 'bg-blue-100', iconText: 'text-blue-800' },
     green: { iconBg: 'bg-green-100', iconText: 'text-green-800' },
@@ -175,12 +178,12 @@ export default function StudentDashboard({ onLogout }) {
 
   return (
     <div className="flex min-h-screen font-sans antialiased text-gray-900">
-      <Sidebar 
-        user={studentUser} 
-        navItems={studentNavItems} 
-        onNavigate={handleNavigate} 
-        activeView={activeView} 
-        onLogout={handleStudentLogout} // Teruskan fungsi logout yang benar
+      <Sidebar
+        user={studentUser}
+        navItems={studentNavItems}
+        onNavigate={handleNavigate}
+        activeView={activeView}
+        onLogout={handleStudentLogout}
         isSidebarOpen={isSidebarOpen}
         logoText="Student Portal"
       />
@@ -210,8 +213,8 @@ export default function StudentDashboard({ onLogout }) {
                   />
                 ))}
               </div>
-              <button 
-                onClick={handleSubmitAttendance} 
+              <button
+                onClick={handleSubmitAttendance}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300"
               >
                 Submit Attendance
@@ -227,7 +230,7 @@ export default function StudentDashboard({ onLogout }) {
             )}
           </div>
         )}
-        
+
         {(activeView === 'dashboard' && !showVerificationUI) && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 $requestedType = isset($_GET['type']) ? $_GET['type'] : null;
 $roleFilter = isset($_GET['role_filter']) ? $_GET['role_filter'] : null;
-$classLevelFilter = isset($_GET['class_level']) ? trim($_GET['class_level']) : null; // ADD THIS LINE
+$classLevelFilter = isset($_GET['class_level']) ? trim($_GET['class_level']) : null;
 
 $response = ['success' => false, 'message' => 'Tipe atau filter pengguna tidak valid.', 'data' => []];
 
@@ -28,8 +28,8 @@ if ($requestedType === 'teachers') {
 }
 
 if ($roleInDb) {
-    // --- MODIFICATION START ---
-    $sql = "SELECT id, name, email, role, student_class_level, teacher_main_subject FROM users WHERE role = ?";
+    // Menambahkan kolom status ke SELECT
+    $sql = "SELECT id, name, email, role, student_class_level, teacher_main_subject, status FROM users WHERE role = ?";
     $params = [$roleInDb];
     $types = "s";
 
@@ -44,7 +44,6 @@ if ($roleInDb) {
     $stmt = $conn->prepare($sql);
 
     if ($stmt) {
-        // Use dynamic binding if params exist
         if (!empty($params)) {
             $stmt->bind_param($types, ...$params);
         }
@@ -54,7 +53,7 @@ if ($roleInDb) {
             $result = $stmt->get_result();
             $data = [];
             while($row = $result->fetch_assoc()) {
-                $row['status'] = 'Active'; // Asumsi status default
+                // Status sekarang diambil langsung dari database
                 $data[] = $row;
             }
             $response['success'] = true;
@@ -70,7 +69,7 @@ if ($roleInDb) {
         $response['message'] = "Gagal mempersiapkan statement: " . $conn->error;
         http_response_code(500);
     }
-} elseif ($requestedType === null && $roleFilter === null) { 
+} elseif ($requestedType === null && $roleFilter === null) {
     $response['message'] = 'Harap tentukan parameter "type" (teachers/students) atau "role_filter" (teacher/student/admin).';
     http_response_code(400);
 }

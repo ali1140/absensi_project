@@ -19,18 +19,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $input = json_decode($inputJSON, TRUE);
 
     // Memastikan data yang diperlukan diterima
-    // student_class_level bersifat opsional di sini, bisa jadi tidak semua registrasi memerlukan ini,
-    // namun untuk kasus registrasi siswa, kita harapkan ini ada.
     if (isset($input['name'], $input['email'], $input['password'])) {
         $name = trim($input['name']);
         $email = trim($input['email']);
         $passwordInput = trim($input['password']);
         $role = 'student'; // Default role untuk registrasi publik
-        
+
         // Ambil student_class_level jika ada, jika tidak, biarkan null
-        $student_class_level = isset($input['student_class_level']) && !empty(trim($input['student_class_level'])) 
-                               ? trim($input['student_class_level']) 
+        $student_class_level = isset($input['student_class_level']) && !empty(trim($input['student_class_level']))
+                               ? trim($input['student_class_level'])
                                : null;
+
+        // Default status untuk pengguna baru yang mendaftar adalah 'inactive'
+        $status = 'inactive';
 
         // Validasi dasar
         if (empty($name)) {
@@ -61,13 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $hashedPassword = password_hash($passwordInput, PASSWORD_DEFAULT);
 
                 // Kolom teacher_main_subject akan NULL untuk siswa
-                $teacher_main_subject = null; 
-                
-                // Nama kolom di tabel users: name, email, password, role, student_class_level, teacher_main_subject
-                $insertQuery = "INSERT INTO users (name, email, password, role, student_class_level, teacher_main_subject) VALUES (?, ?, ?, ?, ?, ?)";
+                $teacher_main_subject = null;
+
+                // Nama kolom di tabel users: name, email, password, role, student_class_level, teacher_main_subject, status
+                $insertQuery = "INSERT INTO users (name, email, password, role, student_class_level, teacher_main_subject, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $stmtInsert = $conn->prepare($insertQuery);
-                // Tipe data: s (name), s (email), s (password), s (role), s (student_class_level), s (teacher_main_subject)
-                $stmtInsert->bind_param("ssssss", $name, $email, $hashedPassword, $role, $student_class_level, $teacher_main_subject);
+                // Tipe data: s (name), s (email), s (password), s (role), s (student_class_level), s (teacher_main_subject), s (status)
+                $stmtInsert->bind_param("sssssss", $name, $email, $hashedPassword, $role, $student_class_level, $teacher_main_subject, $status);
 
                 if ($stmtInsert->execute()) {
                     $response['success'] = true;
