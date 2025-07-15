@@ -1,293 +1,976 @@
-// TeacherDashboard.jsx
-// Pastikan Tailwind CSS dan Font Awesome sudah terkonfigurasi di proyek Anda
+// src/pages/teacher-dashboard.jsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Cookies from 'js-cookie';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-import React, { useState, useEffect } from 'react';
-import Cookies from 'js-cookie'; // Import library js-cookie
 
-// Komponen Helper untuk Ikon (bisa diimpor dari file terpisah)
+const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
+const WEB_BASE_URL = 'http://localhost/COBAK_REACT/src'; 
+
 const Icon = ({ classes }) => <i className={classes}></i>;
 
-// Komponen Sidebar (bisa diimpor dari file terpisah jika sudah ada)
-const Sidebar = ({ user, navItems, onNavigate, activeView, onLogout, isSidebarOpen, logoText = "Attendance" }) => {
-  return (
-    <div className={`sidebar bg-white text-gray-800 w-64 min-h-screen shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static fixed md:z-40`}>
-      <div className="p-4 flex items-center space-x-3 border-b border-gray-200">
-        <img
-          src={user.logoUrl || `https://placehold.co/40x40/3B82F6/FFFFFF?text=${logoText.substring(0,1)}S`}
-          alt="Logo"
-          className="h-10 w-10 rounded-full object-cover"
-          onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/ffffff?text=L"; }}
-        />
-        <span className="logo-text font-bold text-xl text-gray-800">{logoText}</span>
-      </div>
-      <div className="p-4">
-        <div className="flex items-center space-x-3 mb-6">
-          <img
-            src={user.avatarUrl || `https://placehold.co/50x50/E2E8F0/A0AEC0?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'AU'}`}
-            alt="User"
-            className="h-12 w-12 rounded-full object-cover"
-            onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/50x50/cccccc/ffffff?text=U"; }}
-          />
-          <div>
-            <p className="font-medium text-gray-800">{user.name || "Nama Pengguna"}</p>
-            <p className="text-sm text-gray-500">{user.role || "Peran Pengguna"}</p>
-          </div>
-        </div>
-        <nav className="space-y-2">
-          {navItems.map(item => (
-            <a
-              key={item.name}
-              href={item.href || "#"}
-              onClick={(e) => {
-                if (item.onClick) {
-                  e.preventDefault();
-                  item.onClick(item.view);
-                } else if (onNavigate) {
-                  e.preventDefault();
-                  onNavigate(item.view);
-                }
-              }}
-              className={`nav-item flex items-center space-x-3 p-3 rounded-lg ${activeView === item.view ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}`}
-            >
-              {item.icon && <Icon classes={`${item.icon} w-5 text-center`} />}
-              <span className="sidebar-text">{item.name}</span>
-            </a>
-          ))}
-        </nav>
-      </div>
-      <div className="absolute bottom-0 w-full p-4 border-t border-gray-200">
-        {/* Tombol Logout sekarang memanggil prop onLogout */}
-        <button onClick={onLogout} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 text-gray-700 w-full">
-          <Icon classes="fas fa-sign-out-alt w-5 text-center" />
-          <span className="sidebar-text">Logout</span>
-        </button>
-      </div>
-    </div>
-  );
-};
+// PERBAIKAN: Modal Generate Kode dengan pilihan Tipe Kelas
+const GenerateCodeModal = ({ schedule, onClose, onCodeGenerated }) => {
+    const [durationType, setDurationType] = useState('schedule_end');
+    const [customMinutes, setCustomMinutes] = useState(5);
+    const [classType, setClassType] = useState('Offline'); // State baru untuk tipe kelas
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
 
-// Terima prop onLogout dari DashboardWrapper (via App.jsx)
-export default function TeacherDashboard({ onLogout, user }) { // Terima prop user
-  const [activeView, setActiveView] = useState('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [verificationCode, setVerificationCode] = useState(Array(6).fill(''));
-  const [verificationResult, setVerificationResult] = useState('');
-  const [showVerificationUI, setShowVerificationUI] = useState(false);
-
-  // Gunakan data user dari props
-  const teacherUser = {
-    name: user.name,
-    role: user.role,
-    avatarUrl: `https://placehold.co/50x50/7C3AED/FFFFFF?text=${user.name ? user.name.substring(0,2).toUpperCase() : 'TA'}`,
-    logoUrl: "https://placehold.co/40x40/10B981/FFFFFF?text=T"
-  };
-
-  const teacherNavItems = [
-    { name: 'Dashboard', icon: 'fas fa-home', view: 'dashboard' },
-    { name: 'Manage Attendance', icon: 'fas fa-calendar-check', view: 'manage-attendance', onClick: () => { setActiveView('manage-attendance'); setShowVerificationUI(true); } },
-    { name: 'My Courses', icon: 'fas fa-book', view: 'my-courses' },
-    { name: 'Statistics', icon: 'fas fa-chart-bar', view: 'statistics' },
-    { name: 'Settings', icon: 'fas fa-cog', view: 'settings' },
-  ];
-
-  const handleNavigate = (viewName) => {
-    setActiveView(viewName);
-    if (viewName !== 'manage-attendance') {
-        setShowVerificationUI(false);
-    }
-    if (window.innerWidth < 768) setIsSidebarOpen(false);
-  };
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  // Fungsi handleTeacherLogout akan memanggil onLogout dari props
-  const handleTeacherLogout = () => {
-    // onLogout sudah menangani penghapusan cookie dan pembaruan status di backend melalui App.jsx
-    if (onLogout) {
-      onLogout();
-    } else {
-      console.error("Fungsi onLogout tidak ditemukan di props TeacherDashboard.");
-    }
-  };
-
-  const generateVerificationCode = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit number
-    setVerificationCode(code.split(''));
-    setVerificationResult(`Kode verifikasi baru: ${code}`);
-    // Ideally, this code would be sent to a backend and associated with a specific class/session
-  };
-
-  useEffect(() => {
-    if (activeView === 'dashboard' || activeView === 'statistics') {
-        const canvas = document.getElementById('teacherAttendanceChart');
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#E9E9E9';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#60A5FA';
-                ctx.font = "16px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText("Placeholder Teacher Attendance Chart", canvas.width / 2, canvas.height / 2);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setError('');
+        try {
+            const response = await fetch(`${API_BASE_URL}/create_attendance_session.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    schedule_id: schedule.id,
+                    duration_type: durationType,
+                    custom_minutes: customMinutes,
+                    class_type: classType // Mengirim tipe kelas ke backend
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                onCodeGenerated(schedule.id, data);
+                onClose();
+            } else {
+                setError(data.message || 'Gagal membuat kode.');
             }
+        } catch (error) {
+            setError('Terjadi kesalahan saat membuat kode.');
+        } finally {
+            setIsSubmitting(false);
         }
-    }
-  }, [activeView]);
+    };
 
-  const recentAttendanceData = [
-    { date: "May 15, 2023", course: "Mathematics", class: "X IPA 1", present: 28, absent: 2 },
-    { date: "May 14, 2023", course: "Physics", class: "XI IPS 2", present: 25, absent: 5 },
-    { date: "May 12, 2023", course: "Chemistry", class: "XII Bahasa 1", present: 20, absent: 0 },
-  ];
-
-  const upcomingClassesData = [
-    { name: "Mathematics", details: "Today, 10:00 AM - Room 203 (X IPA 1)", icon: "fas fa-book", color: "blue" },
-    { name: "Physics", details: "Tomorrow, 09:00 AM - Lab 3 (XI IPS 2)", icon: "fas fa-flask", color: "green" },
-  ];
-
-  const colorClasses = {
-    blue: { iconBg: 'bg-blue-100', iconText: 'text-blue-800' },
-    green: { iconBg: 'bg-green-100', iconText: 'text-green-800' },
-    purple: { iconBg: 'bg-purple-100', iconText: 'text-purple-800' },
-  };
-
-
-  return (
-    <div className="flex min-h-screen font-sans antialiased text-gray-900">
-      <Sidebar
-        user={teacherUser}
-        navItems={teacherNavItems}
-        onNavigate={handleNavigate}
-        activeView={activeView}
-        onLogout={handleTeacherLogout}
-        isSidebarOpen={isSidebarOpen}
-        logoText="Teacher Portal"
-      />
-      <div className="main-content flex-1 p-4 sm:p-8 bg-gray-100 min-h-screen overflow-y-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Teacher Dashboard</h1>
-          <button onClick={toggleSidebar} id="sidebar-toggle" className="p-2 rounded-lg hover:bg-gray-200 md:hidden">
-            <Icon classes="fas fa-bars text-gray-700" />
-          </button>
-        </div>
-
-        {showVerificationUI && activeView === 'manage-attendance' && (
-          <div id="teacher-attendance-management" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Manage Attendance Codes</h2>
-            <p className="text-gray-600 mb-4">Generate and distribute unique 6-digit codes for students to verify their attendance.</p>
-            <div className="flex flex-col items-center">
-              <div className="flex space-x-2 mb-6">
-                {verificationCode.map((digit, index) => (
-                  <span
-                    key={index}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-2xl font-bold border border-blue-300 bg-blue-50 text-blue-800 rounded-lg"
-                  >
-                    {digit}
-                  </span>
-                ))}
-              </div>
-              <button
-                onClick={generateVerificationCode}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300"
-              >
-                Generate New Code
-              </button>
-            </div>
-            {verificationResult && (
-              <div id="verification-result" className={`mt-4 text-center p-3 rounded-md bg-green-100 text-green-700`}>
-                <p className="font-medium">
-                  <Icon classes={`fas fa-check-circle mr-2`} />
-                  {verificationResult}
-                </p>
-              </div>
-            )}
-            <p className="text-sm text-gray-500 mt-3 text-center">Bagikan kode ini kepada siswa di kelas Anda.</p>
-          </div>
-        )}
-
-        {(activeView === 'dashboard' && !showVerificationUI) && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-gray-500">Total Classes Taught</p><h3 className="text-2xl font-bold mt-1 text-gray-800">5</h3></div>
-                  <div className="p-3 rounded-full bg-blue-50 text-blue-600"><Icon classes="fas fa-chalkboard-teacher text-xl" /></div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-gray-500">Total Courses</p><h3 className="text-2xl font-bold mt-1 text-gray-800">3</h3></div>
-                  <div className="p-3 rounded-full bg-green-50 text-green-600"><Icon classes="fas fa-book-open text-xl" /></div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-gray-500">Avg. Attendance Rate</p><h3 className="text-2xl font-bold mt-1 text-gray-800">92%</h3></div>
-                  <div className="p-3 rounded-full bg-purple-50 text-purple-600"><Icon classes="fas fa-chart-line text-xl" /></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Recent Attendance Records</h2>
-                <button className="text-blue-600 hover:text-blue-800">View All</button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Present</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Absent</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {recentAttendanceData.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.date}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.course}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.class}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{item.present}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{item.absent}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Attendance Trends</h2>
-                <div className="h-64"><canvas id="teacherAttendanceChart"></canvas></div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Upcoming Classes to Teach</h2>
+    return (
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4">Buat Sesi Presensi</h3>
+                {error && <p className="text-red-500 text-sm mb-2 p-3 bg-red-100 rounded-md">{error}</p>}
+                
                 <div className="space-y-4">
-                  {upcomingClassesData.map((item, index) => (
-                     <div key={index} className="flex items-start p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
-                        <div className={`${colorClasses[item.color]?.iconBg || 'bg-gray-100'} ${colorClasses[item.color]?.iconText || 'text-gray-800'} p-2 rounded-lg mr-3`}>
-                            <Icon classes={item.icon} />
-                        </div>
-                        <div>
-                            <h4 className="font-medium text-gray-800">{item.name}</h4>
-                            <p className="text-sm text-gray-500">{item.details}</p>
+                    {/* Pilihan Tipe Kelas */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Tipe Kelas untuk Sesi Ini</label>
+                        <div className="flex space-x-4">
+                            <label className="flex items-center">
+                                <input type="radio" name="classType" value="Offline" checked={classType === 'Offline'} onChange={() => setClassType('Offline')} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"/>
+                                <span className="ml-2 text-gray-700">Offline (Wajib GPS)</span>
+                            </label>
+                            <label className="flex items-center">
+                                <input type="radio" name="classType" value="Online" checked={classType === 'Online'} onChange={() => setClassType('Online')} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"/>
+                                <span className="ml-2 text-gray-700">Online (Tanpa GPS)</span>
+                            </label>
                         </div>
                     </div>
-                  ))}
+
+                    <hr/>
+
+                    {/* Pilihan Durasi */}
+                    <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Durasi Kode</label>
+                        <div className="flex items-center p-3 border rounded-lg">
+                            <input type="radio" id="duration_schedule" name="duration" value="schedule_end" checked={durationType === 'schedule_end'} onChange={() => setDurationType('schedule_end')} />
+                            <label htmlFor="duration_schedule" className="ml-3">
+                                <p className="font-medium">Sesuai Jam Pelajaran</p>
+                                <p className="text-xs text-gray-500">Kode akan aktif hingga jam pelajaran berakhir ({schedule.end_time_formatted})</p>
+                            </label>
+                        </div>
+                        <div className="flex items-center p-3 border rounded-lg mt-2">
+                            <input type="radio" id="duration_custom" name="duration" value="custom" checked={durationType === 'custom'} onChange={() => setDurationType('custom')} />
+                            <label htmlFor="duration_custom" className="ml-3 flex-grow">
+                                <p className="font-medium">Atur Sendiri</p>
+                                <p className="text-xs text-gray-500">Tentukan masa berlaku kode dalam menit.</p>
+                            </label>
+                            <input type="number" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} disabled={durationType !== 'custom'} className="w-20 p-1 border rounded-md text-center"/>
+                        </div>
+                    </div>
                 </div>
-              </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                    <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                    <button onClick={handleSubmit} disabled={isSubmitting} className="btn-primary-attractive">
+                        {isSubmitting ? 'Membuat...' : 'Buat Kode'}
+                    </button>
+                </div>
             </div>
-          </>
-        )}
-        {activeView === 'my-courses' && <div className="text-gray-700 bg-white p-6 rounded-xl shadow-sm">Tampilan Mata Pelajaran Saya (Belum Diimplementasikan)</div>}
-        {activeView === 'statistics' && <div className="text-gray-700 bg-white p-6 rounded-xl shadow-sm">Tampilan Statistik Detail (Belum Diimplementasikan) <div className="h-64 mt-4"><canvas id="teacherAttendanceChart"></canvas></div></div>}
-        {activeView === 'settings' && <div className="text-gray-700 bg-white p-6 rounded-xl shadow-sm">Tampilan Pengaturan Akun (Belum Diimplementasikan)</div>}
-      </div>
-    </div>
-  );
+        </div>
+    );
+};
+
+
+// ... (sisa kode tidak berubah)
+// ... Anda bisa menyalin sisa kode dari respons sebelumnya jika perlu,
+// ... atau hanya fokus pada perubahan di atas.
+
+// Komponen Materi Pembelajaran (Guru)
+const MaterialsView = ({ user }) => {
+    const [courses, setCourses] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState('');
+    const [materials, setMaterials] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        // Ambil daftar mata pelajaran yang diajar guru
+        fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${user.id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const courseMap = new Map();
+                    data.data.forEach(schedule => {
+                        if (!courseMap.has(schedule.course_id)) {
+                            courseMap.set(schedule.course_id, {
+                                id: schedule.course_id,
+                                name: schedule.course_name
+                            });
+                        }
+                    });
+                    setCourses(Array.from(courseMap.values()));
+                }
+            });
+    }, [user.id]);
+
+    const fetchMaterials = useCallback(() => {
+        if (!selectedCourse) {
+            setMaterials([]);
+            return;
+        };
+        setIsLoading(true);
+        fetch(`${API_BASE_URL}/get_materials.php?course_id=${selectedCourse}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) setMaterials(data.data);
+            })
+            .finally(() => setIsLoading(false));
+    }, [selectedCourse]);
+
+    useEffect(() => {
+        fetchMaterials();
+    }, [fetchMaterials]);
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Yakin ingin menghapus materi ini?")) {
+            await fetch(`${API_BASE_URL}/delete_material.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchMaterials(); // Refresh list
+        }
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <h2 className="text-xl font-semibold mb-4">Materi Pembelajaran</h2>
+            <div className="flex justify-between items-center mb-4">
+                <select value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)} className="input-field w-1/3">
+                    <option value="">Pilih Mata Pelajaran</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button onClick={() => setIsModalOpen(true)} disabled={!selectedCourse} className="btn-primary-attractive">
+                    <Icon classes="fas fa-upload mr-2" /> Unggah Materi Baru
+                </button>
+            </div>
+            
+            {selectedCourse && (
+                isLoading ? <div className="text-center py-5"><Icon classes="fas fa-spinner fa-spin"/></div> :
+                <div className="space-y-3">
+                    {materials.length > 0 ? materials.map(mat => (
+                        <div key={mat.id} className="p-3 border rounded-lg flex justify-between items-center">
+                            <div>
+                                <h3 className="font-bold">{mat.title}</h3>
+                                <p className="text-sm text-gray-600">{mat.description}</p>
+                                <a href={`${WEB_BASE_URL}/${mat.file_path}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                                    <Icon classes="fas fa-download mr-1"/> Unduh Berkas
+                                </a>
+                            </div>
+                            <button onClick={() => handleDelete(mat.id)} className="text-red-500 hover:text-red-700 ml-4"><Icon classes="fas fa-trash"/></button>
+                        </div>
+                    )) : <p className="text-center text-gray-500 py-5">Belum ada materi untuk mata pelajaran ini.</p>}
+                </div>
+            )}
+
+            {isModalOpen && <UploadMaterialModal courseId={selectedCourse} teacherId={user.id} onClose={() => setIsModalOpen(false)} onUploaded={fetchMaterials} />}
+        </div>
+    );
+};
+
+const UploadMaterialModal = ({ courseId, teacherId, onClose, onUploaded }) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [file, setFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!file) {
+            setError("Harap pilih berkas untuk diunggah.");
+            return;
+        }
+        setIsUploading(true);
+        setError('');
+
+        const formData = new FormData();
+        formData.append('teacher_id', teacherId);
+        formData.append('course_id', courseId);
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('material_file', file);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/upload_material.php`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                onUploaded();
+                onClose();
+            } else {
+                setError(data.message || "Gagal mengunggah.");
+            }
+        } catch (err) {
+            setError("Terjadi kesalahan koneksi.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
+                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4">Unggah Materi Baru</h3>
+                {error && <p className="text-red-500 text-sm mb-2 p-2 bg-red-100 rounded-md">{error}</p>}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium">Judul Materi</label>
+                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Deskripsi Singkat</label>
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows="3" className="mt-1 w-full input-field"></textarea>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Pilih Berkas</label>
+                        <input type="file" onChange={e => setFile(e.target.files[0])} required className="mt-1 w-full" />
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                        <button type="submit" disabled={isUploading} className="btn-primary-attractive">
+                            {isUploading ? 'Mengunggah...' : 'Unggah'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
+// Komponen Pengaturan Akun
+const SettingsView = ({ user }) => {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [message, setMessage] = useState({ text: '', type: '' });
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage({ text: '', type: '' });
+
+        if (newPassword !== confirmPassword) {
+            setMessage({ text: 'Konfirmasi password baru tidak cocok.', type: 'error' });
+            return;
+        }
+        if (newPassword.length < 6) {
+            setMessage({ text: 'Password baru minimal 6 karakter.', type: 'error' });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/change_password.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                setMessage({ text: data.message, type: 'success' });
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+            } else {
+                setMessage({ text: data.message, type: 'error' });
+            }
+        } catch (error) {
+            setMessage({ text: 'Terjadi kesalahan koneksi.', type: 'error' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border max-w-lg mx-auto">
+            <h2 className="text-xl font-semibold mb-4">Ubah Password</h2>
+            {message.text && (
+                <div className={`p-3 mb-4 text-sm rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {message.text}
+                </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium">Password Saat Ini</label>
+                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium">Password Baru</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium">Konfirmasi Password Baru</label>
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                </div>
+                <div className="flex justify-end">
+                    <button type="submit" disabled={isLoading} className="btn-primary-attractive">
+                        {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+
+// Komponen Laporan Presensi
+const AttendanceReportView = ({ teacherId }) => {
+    const [classes, setClasses] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [reportData, setReportData] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        // Ambil daftar kelas yang diajar guru
+        fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${teacherId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const uniqueClasses = [...new Set(data.data.map(item => item.student_class_level))];
+                    setClasses(uniqueClasses);
+                }
+            });
+    }, [teacherId]);
+
+    const handleGenerateReport = async () => {
+        if (!selectedClass || !startDate || !endDate) {
+            alert("Harap pilih kelas dan rentang tanggal.");
+            return;
+        }
+        setIsLoading(true);
+        setReportData([]);
+        try {
+            const response = await fetch(`${API_BASE_URL}/get_attendance_history.php?teacher_id=${teacherId}&class_level=${encodeURIComponent(selectedClass)}&start_date=${startDate}&end_date=${endDate}`);
+            const data = await response.json();
+            if (data.success) {
+                setReportData(data.data);
+            } else {
+                alert(`Gagal mengambil laporan: ${data.message}`);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Gagal mengambil laporan: Terjadi kesalahan koneksi.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const exportToPDF = () => {
+        if (reportData.length === 0) {
+            alert("Tidak ada data untuk diekspor.");
+            return;
+        }
+        try {
+            const doc = new jsPDF();
+            doc.text(`Laporan Presensi Kelas: ${selectedClass}`, 14, 16);
+            doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 22);
+            
+            const tableColumn = ["Tanggal", "Nama Siswa", "Mata Pelajaran", "Status"];
+            const tableRows = [];
+
+            reportData.forEach(item => {
+                const row = [
+                    item.attendance_date,
+                    item.student_name,
+                    item.course_name,
+                    item.status,
+                ];
+                tableRows.push(row);
+            });
+
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 30,
+            });
+            doc.save(`laporan_presensi_${selectedClass}_${startDate}_${endDate}.pdf`);
+        } catch (error) {
+            console.error("Error exporting to PDF:", error);
+            alert("Gagal mengekspor ke PDF. Periksa konsol untuk detail.");
+        }
+    };
+    
+    const statusStyle = {
+        'Present': 'bg-green-100 text-green-800', 'Absent': 'bg-red-100 text-red-800',
+        'Excused': 'bg-orange-100 text-orange-800'
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <h2 className="text-xl font-semibold mb-4">Laporan Presensi</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
+                <div>
+                    <label className="block text-sm font-medium">Kelas</label>
+                    <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className="mt-1 w-full input-field">
+                        <option value="">Pilih Kelas</option>
+                        {classes.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium">Tanggal Mulai</label>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 w-full input-field" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium">Tanggal Selesai</label>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 w-full input-field" />
+                </div>
+                <button onClick={handleGenerateReport} disabled={isLoading} className="btn-primary-attractive h-10">
+                    {isLoading ? "Memuat..." : "Tampilkan Laporan"}
+                </button>
+            </div>
+
+            {reportData.length > 0 && (
+                <>
+                    <div className="flex justify-end mb-4">
+                        <button onClick={exportToPDF} className="btn-success-attractive">
+                            <Icon classes="fas fa-file-pdf mr-2" /> Ekspor ke PDF
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="th-cell">Tanggal</th>
+                                    <th className="th-cell">Nama Siswa</th>
+                                    <th className="th-cell">Mata Pelajaran</th>
+                                    <th className="th-cell">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {reportData.map((item, index) => (
+                                    <tr key={item.id || index}>
+                                        <td className="td-cell">{item.attendance_date}</td>
+                                        <td className="td-cell">{item.student_name}</td>
+                                        <td className="td-cell">{item.course_name}</td>
+                                        <td className="td-cell">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyle[item.status] || 'bg-gray-100'}`}>{item.status}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+// Komponen Pengumuman
+const AnnouncementsView = ({ user }) => {
+    const [announcements, setAnnouncements] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [classes, setClasses] = useState([]);
+
+    const fetchAnnouncements = useCallback(() => {
+        fetch(`${API_BASE_URL}/get_announcements.php?teacher_id=${user.id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) setAnnouncements(data.data);
+            });
+    }, [user.id]);
+
+    useEffect(() => {
+        fetchAnnouncements();
+        // Ambil kelas yang diajar guru
+        fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${user.id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const uniqueClasses = [...new Set(data.data.map(item => item.student_class_level))];
+                    setClasses(uniqueClasses);
+                }
+            });
+    }, [fetchAnnouncements, user.id]);
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Yakin ingin menghapus pengumuman ini?")) {
+            await fetch(`${API_BASE_URL}/delete_announcement.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchAnnouncements();
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Pengumuman Saya</h2>
+                <button onClick={() => setIsModalOpen(true)} className="btn-primary-attractive">
+                    <Icon classes="fas fa-plus mr-2" /> Buat Pengumuman
+                </button>
+            </div>
+            <div className="space-y-4">
+                {announcements.length > 0 ? announcements.map(item => (
+                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold">{item.title}</h3>
+                                <p className="text-sm text-gray-500">Untuk Kelas: {item.class_level}</p>
+                                <p className="mt-2">{item.content}</p>
+                            </div>
+                            <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700">
+                                <Icon classes="fas fa-trash" />
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 text-right mt-2">Dibuat pada: {new Date(item.created_at).toLocaleString()}</p>
+                    </div>
+                )) : <p className="text-center text-gray-500 py-5 bg-white rounded-lg">Belum ada pengumuman.</p>}
+            </div>
+            {isModalOpen && <CreateAnnouncementModal user={user} classes={classes} onClose={() => setIsModalOpen(false)} onSaved={fetchAnnouncements} />}
+        </div>
+    );
+};
+
+const CreateAnnouncementModal = ({ user, classes, onClose, onSaved }) => {
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [targetClass, setTargetClass] = useState('Semua Kelas');
+    
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        await fetch(`${API_BASE_URL}/create_announcement.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                teacher_id: user.id,
+                title,
+                content,
+                class_level: targetClass
+            })
+        });
+        onSaved();
+        onClose();
+    };
+
+    return (
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
+                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4">Buat Pengumuman Baru</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium">Judul</label>
+                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Isi Pengumuman</label>
+                        <textarea value={content} onChange={e => setContent(e.target.value)} required rows="4" className="mt-1 w-full input-field"></textarea>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Tujukan Untuk Kelas</label>
+                        <select value={targetClass} onChange={e => setTargetClass(e.target.value)} className="mt-1 w-full input-field">
+                            <option value="Semua Kelas">Semua Kelas yang Diajar</option>
+                            {classes.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                        <button type="submit" className="btn-primary-attractive">Kirim</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const ScheduleCalendar = ({ schedules = [], isLoading }) => {
+    const daysOfWeek = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+    const schedulesByDay = useMemo(() => daysOfWeek.reduce((acc, day) => {
+        acc[day] = schedules.filter(s => s.day_of_week.toLowerCase() === day.toLowerCase()).sort((a, b) => a.start_time.localeCompare(b.start_time));
+        return acc;
+    }, {}), [schedules, daysOfWeek]);
+
+    if (isLoading) return <div className="text-center p-10"><Icon classes="fas fa-spinner fa-spin text-2xl text-blue-500" /></div>;
+    if (schedules.length === 0) return <div className="text-center text-gray-500 p-10">Tidak ada jadwal mengajar yang ditemukan.</div>;
+
+    return (
+        <div className="overflow-x-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {daysOfWeek.map(day => (
+                    <div key={day} className="bg-gray-50 rounded-lg p-3 min-h-[150px]">
+                        <h3 className="font-semibold text-center text-gray-700 border-b pb-2 mb-3">{day}</h3>
+                        <div className="space-y-3">
+                            {schedulesByDay[day] && schedulesByDay[day].length > 0 ? schedulesByDay[day].map(schedule => (
+                                <div key={schedule.id} className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-500">
+                                    <p className="font-bold text-sm text-gray-800">{schedule.course_name}</p>
+                                    <p className="text-xs text-gray-600">{schedule.student_class_level}</p>
+                                    <p className="text-xs text-gray-500 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
+                                </div>
+                            )) : <p className="text-xs text-gray-400 text-center py-4">Libur</p>}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+const ClassDetailView = ({ schedule, onClose }) => {
+    const [roster, setRoster] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchRoster = useCallback(() => {
+        setIsLoading(true);
+        fetch(`${API_BASE_URL}/get_class_attendance_details.php?schedule_id=${schedule.id}&class_level=${encodeURIComponent(schedule.student_class_level)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setRoster(data.data);
+                }
+            })
+            .finally(() => setIsLoading(false));
+    }, [schedule]);
+
+    useEffect(() => {
+        fetchRoster();
+    }, [fetchRoster]);
+
+    const handleStatusChange = async (studentId, newStatus) => {
+        const originalRoster = [...roster];
+        setRoster(prevRoster => prevRoster.map(student => 
+            student.student_id === studentId ? { ...student, attendance_status: newStatus } : student
+        ));
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/update_manual_attendance.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    schedule_id: schedule.id,
+                    status: newStatus,
+                }),
+            });
+            const data = await response.json();
+            if (!data.success) {
+                alert(`Gagal memperbarui: ${data.message}`);
+                setRoster(originalRoster);
+            }
+        } catch (error) {
+            alert('Gagal terhubung ke server.');
+            setRoster(originalRoster);
+        }
+    };
+
+    const attendanceSummary = useMemo(() => {
+        return roster.reduce((acc, student) => {
+            const status = student.attendance_status;
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {});
+    }, [roster]);
+
+    return (
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col relative" style={{maxHeight: '90vh'}}>
+                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
+                <div className="p-4 border-b">
+                    <h3 className="text-xl font-semibold text-gray-800">{schedule.course_name}</h3>
+                    <p className="text-sm text-gray-600">{schedule.student_class_level}</p>
+                </div>
+                <div className="p-4 grid grid-cols-3 gap-2 text-center border-b">
+                    <div><p className="font-bold text-green-600 text-lg">{attendanceSummary.Present || 0}</p><p className="text-xs">Hadir</p></div>
+                    <div><p className="font-bold text-red-600 text-lg">{attendanceSummary.Absent || 0}</p><p className="text-xs">Absen</p></div>
+                    <div><p className="font-bold text-orange-600 text-lg">{attendanceSummary.Excused || 0}</p><p className="text-xs">Izin</p></div>
+                </div>
+                <div className="p-4 overflow-y-auto">
+                    {isLoading ? <div className="text-center"><Icon classes="fas fa-spinner fa-spin" /></div> :
+                    <table className="min-w-full">
+                        <thead>
+                            <tr>
+                                <th className="text-left text-xs font-medium text-gray-500 uppercase py-2">Nama Siswa</th>
+                                <th className="text-left text-xs font-medium text-gray-500 uppercase py-2 w-32">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {roster.map(student => (
+                                <tr key={student.student_id}>
+                                    <td className="py-2 text-sm">{student.student_name}</td>
+                                    <td>
+                                        <select 
+                                            value={student.attendance_status} 
+                                            onChange={(e) => handleStatusChange(student.student_id, e.target.value)}
+                                            className="w-full p-1 border rounded-md text-xs"
+                                        >
+                                            <option value="Present">Hadir</option>
+                                            <option value="Absent">Absen</option>
+                                            <option value="Excused">Izin</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    }
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ManageAttendanceView = ({ schedules = [], isLoading, teacherId }) => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [generatedCodes, setGeneratedCodes] = useState({});
+    const [modal, setModal] = useState({ type: null, data: null });
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const todayString = useMemo(() => {
+        const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        return days[currentTime.getDay()];
+    }, [currentTime]);
+
+    const todaySchedules = useMemo(() => {
+        return schedules
+            .filter(s => s.day_of_week.toLowerCase() === todayString.toLowerCase())
+            .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    }, [schedules, todayString]);
+
+    useEffect(() => {
+        if (todaySchedules.length > 0) {
+            todaySchedules.forEach(schedule => {
+                if (!generatedCodes[schedule.id]) {
+                    fetch(`${API_BASE_URL}/get_active_session.php?schedule_id=${schedule.id}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success && data.session) {
+                                setGeneratedCodes(prev => ({
+                                    ...prev,
+                                    [schedule.id]: { code: data.session.code, expires_at: data.session.expires_at }
+                                }));
+                            }
+                        })
+                        .catch(err => console.error(`Failed to fetch active session for schedule ${schedule.id}`, err));
+                }
+            });
+        }
+    }, [todaySchedules, generatedCodes]);
+
+
+    const isWithinTimeRange = useCallback((schedule) => {
+        const now = currentTime;
+        const startTime = new Date(`${now.toDateString()} ${schedule.start_time}`);
+        const endTime = new Date(`${now.toDateString()} ${schedule.end_time}`);
+        return now >= startTime && now <= endTime;
+    }, [currentTime]);
+
+    const handleCodeGenerated = (scheduleId, data) => {
+        setGeneratedCodes(prev => ({ ...prev, [scheduleId]: { code: data.code, expires_at: data.expires_at } }));
+    };
+
+    const CountdownTimer = ({ expiryTimestamp, onExpiry }) => {
+        const calculateTimeLeft = useCallback(() => {
+            const difference = new Date(expiryTimestamp).getTime() - new Date().getTime();
+            if (difference <= 0) return null;
+            return {
+                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                minutes: Math.floor((difference / 1000 / 60) % 60),
+                seconds: Math.floor((difference / 1000) % 60),
+            };
+        }, [expiryTimestamp]);
+
+        const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                const newTimeLeft = calculateTimeLeft();
+                setTimeLeft(newTimeLeft);
+                if (newTimeLeft === null) {
+                    onExpiry();
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
+        }, [timeLeft, calculateTimeLeft, onExpiry]);
+        
+        if (!timeLeft) return <span className="font-mono text-sm">00:00:00</span>;
+
+        return (
+            <span className="font-mono text-sm">
+                {`${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`}
+            </span>
+        );
+    };
+
+    const handleExpiry = (scheduleId) => {
+        setGeneratedCodes(prev => {
+            const newState = { ...prev };
+            delete newState[scheduleId];
+            return newState;
+        });
+    };
+
+    if (isLoading) return <div className="text-center py-10"><Icon classes="fas fa-spinner fa-spin text-2xl text-blue-500" /></div>;
+
+    return (
+        <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6">Sesi Presensi Hari Ini ({todayString})</h2>
+                {todaySchedules.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500"><Icon classes="fas fa-calendar-times text-4xl mb-3" /><p>Tidak ada jadwal mengajar hari ini.</p></div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {todaySchedules.map(schedule => {
+                            const canGenerate = isWithinTimeRange(schedule);
+                            const session = generatedCodes[schedule.id];
+                            return (
+                                <div key={schedule.id} className={`p-4 rounded-lg shadow-md flex flex-col justify-between border ${canGenerate && !session ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                                    <div>
+                                        <p className="font-bold text-gray-800">{schedule.course_name}</p>
+                                        <p className="text-sm text-gray-600">{schedule.student_class_level}</p>
+                                        <p className="text-sm text-gray-500 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t space-y-2">
+                                        {session ? (
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-600 mb-2">Kode Presensi:</p>
+                                                <div className="flex justify-center space-x-1 mb-2">
+                                                    {session.code.split('').map((digit, i) => (
+                                                        <span key={i} className="w-9 h-10 flex items-center justify-center text-xl font-bold border bg-white text-blue-800 rounded-md shadow-inner">{digit}</span>
+                                                    ))}
+                                                </div>
+                                                <p className="text-xs text-red-600">Berlaku hingga: <CountdownTimer expiryTimestamp={session.expires_at} onExpiry={() => handleExpiry(schedule.id)} /></p>
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => setModal({ type: 'generate', data: schedule })} disabled={!canGenerate} className="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed" title={canGenerate ? "Buat kode presensi" : "Hanya bisa dibuka saat jam pelajaran"}>
+                                                <Icon classes="fas fa-magic mr-2" />Generate Code
+                                            </button>
+                                        )}
+                                        <button onClick={() => setModal({ type: 'detail', data: schedule })} className="w-full bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition hover:bg-gray-300">
+                                            <Icon classes="fas fa-edit mr-2" />Kelola Manual
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+            {modal.type === 'generate' && <GenerateCodeModal schedule={modal.data} onClose={() => setModal({ type: null, data: null })} onCodeGenerated={handleCodeGenerated} />}
+            {modal.type === 'detail' && <ClassDetailView schedule={modal.data} onClose={() => setModal({ type: null, data: null })} />}
+        </>
+    );
+};
+
+
+// Komponen Utama Dasbor Guru
+export default function TeacherDashboard({ onLogout, user }) {
+    const [activeView, setActiveView] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [dashboardStats, setDashboardStats] = useState({ total_classes: 0, total_courses: 0 });
+    const [scheduleData, setScheduleData] = useState([]);
+    const [isLoading, setIsLoading] = useState({ stats: true, schedule: true });
+
+    const teacherUser = { name: user.name, role: user.role, avatarUrl: `https://placehold.co/50x50/7C3AED/FFFFFF?text=${user.name ? user.name.substring(0, 2).toUpperCase() : 'TA'}` };
+
+    useEffect(() => {
+        const teacherId = user?.id;
+        if (!teacherId) return;
+        setIsLoading({ stats: true, schedule: true });
+        fetch(`${API_BASE_URL}/get_teacher_dashboard_stats.php?teacher_id=${teacherId}`).then(res => res.json()).then(data => { if (data.success) setDashboardStats(data.data); }).finally(() => setIsLoading(p => ({ ...p, stats: false })));
+        fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${teacherId}`).then(res => res.json()).then(data => { if (data.success) setScheduleData(data.data); }).finally(() => setIsLoading(p => ({ ...p, schedule: false })));
+    }, [user.id]);
+
+    const teacherNavItems = [
+        { name: 'Dashboard', icon: 'fas fa-home', view: 'dashboard' },
+        { name: 'Kelola Presensi', icon: 'fas fa-calendar-check', view: 'manage-attendance' },
+        { name: 'Laporan Presensi', icon: 'fas fa-chart-bar', view: 'reports' },
+        { name: 'Pengumuman', icon: 'fas fa-bullhorn', view: 'announcements' },
+        { name: 'Materi Pelajaran', icon: 'fas fa-book-reader', view: 'materials' },
+        { name: 'Pengaturan', icon: 'fas fa-cog', view: 'settings' }
+    ];
+    
+    const handleNavigate = (view) => { setActiveView(view); if (window.innerWidth < 768) setIsSidebarOpen(false); };
+
+    const renderContent = () => {
+        switch (activeView) {
+            case 'dashboard':
+                return (
+                    <>
+                        <div className="grid md:grid-cols-2 gap-6 mb-8">
+                            <div className="bg-white p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p>Total Kelas Diajar</p><h3 className="text-2xl font-bold mt-1">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_classes}</h3></div><div className="p-3 rounded-full bg-blue-50 text-blue-600"><Icon classes="fas fa-chalkboard-teacher text-xl" /></div></div></div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p>Total Mata Pelajaran</p><h3 className="text-2xl font-bold mt-1">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_courses}</h3></div><div className="p-3 rounded-full bg-green-50 text-green-600"><Icon classes="fas fa-book-open text-xl" /></div></div></div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-sm p-6"><h2 className="text-xl font-semibold mb-4">Jadwal Mengajar Mingguan</h2><ScheduleCalendar schedules={scheduleData} isLoading={isLoading.schedule} /></div>
+                    </>
+                );
+            case 'manage-attendance':
+                return <ManageAttendanceView schedules={scheduleData} isLoading={isLoading.schedule} teacherId={user.id} />;
+            case 'reports':
+                return <AttendanceReportView teacherId={user.id} />;
+            case 'announcements':
+                return <AnnouncementsView user={user} />;
+            case 'materials':
+                return <MaterialsView user={user} />;
+            case 'settings':
+                return <SettingsView user={user} />;
+            default:
+                return <div>Pilih menu</div>;
+        }
+    };
+
+    return (
+        <div className="flex min-h-screen font-sans text-gray-900 bg-gray-100">
+            <div className={`sidebar bg-white w-64 min-h-screen shadow-lg transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static z-40`}>
+                <div className="p-4">
+                    <div className="flex items-center space-x-3 mb-6"><img src={teacherUser.avatarUrl} alt="User" className="h-12 w-12 rounded-full" /><div><p className="font-medium">{teacherUser.name}</p><p className="text-sm text-gray-500">{teacherUser.role}</p></div></div>
+                    <nav className="space-y-2">{teacherNavItems.map(item => <a key={item.name} href="#" onClick={(e) => { e.preventDefault(); handleNavigate(item.view); }} className={`flex items-center space-x-3 p-3 rounded-lg ${activeView === item.view ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}><Icon classes={`${item.icon} w-5 text-center`} /><span>{item.name}</span></a>)}</nav>
+                </div>
+                <div className="absolute bottom-0 w-full p-4 border-t"><button onClick={onLogout} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 w-full"><Icon classes="fas fa-sign-out-alt w-5 text-center" /><span>Logout</span></button></div>
+            </div>
+            <div className="main-content flex-1 p-4 sm:p-8 overflow-y-auto">
+                <div className="flex justify-between items-center mb-8"><h1 className="text-2xl font-bold">{teacherNavItems.find(item => item.view === activeView)?.name || 'Dashboard'}</h1><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg md:hidden"><Icon classes="fas fa-bars" /></button></div>
+                {renderContent()}
+            </div>
+        </div>
+    );
 }
