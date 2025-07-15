@@ -3,13 +3,21 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie'; // Import library js-cookie
+import { MapContainer, TileLayer, Marker, Polygon, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 // URL base untuk script PHP Anda di Laragon.
 const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC'; // Untuk users, stats
 const MODULE_API_BASE_URL = `http://localhost/COBAK_REACT/SRC/penjadwalan`; // Untuk courses, schedules, dan classes
 
 // Komponen Helper untuk Ikon (menggunakan class Font Awesome)
 const Icon = ({ classes }) => <i className={classes}></i>;
-
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 // --- Komponen Modal Tambah/Edit Pengguna ---
 const AddEditUserModal = ({
     isOpen,
@@ -901,7 +909,137 @@ const ClassDetailsModal = ({ isOpen, onClose, classItem, students, isLoading }) 
     );
 };
 
+const SettingsView = () => {
+    const [settings, setSettings] = useState({
+        school_geofence_polygon: '[]',
+        school_year_start_date: '',
+        school_year_end_date: ''
+    });
+    const [polygonPoints, setPolygonPoints] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [message, setMessage] = useState({ text: '', type: '' });
+    const [mapCenter, setMapCenter] = useState([-6.2088, 106.8456]); // Default Jakarta
 
+    useEffect(() => {
+        setIsLoading(true);
+        fetch(`${API_BASE_URL}/get_settings.php`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setSettings(prev => ({ ...prev, ...data.data }));
+                    const savedPolygon = JSON.parse(data.data.school_geofence_polygon || '[]');
+                    setPolygonPoints(savedPolygon);
+                    if (savedPolygon.length > 0) {
+                        setMapCenter(savedPolygon[0]); // Pusatkan peta pada titik pertama poligon
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching settings:", err);
+                setMessage({ text: 'Gagal memuat pengaturan.', type: 'error' });
+            })
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    const handleSaveSettings = async () => {
+        setMessage({ text: '', type: '' });
+        const updatedSettings = {
+            ...settings,
+            school_geofence_polygon: JSON.stringify(polygonPoints)
+        };
+        try {
+            const response = await fetch(`${API_BASE_URL}/update_settings.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedSettings),
+            });
+            const result = await response.json();
+            if (result.success) {
+                setMessage({ text: 'Pengaturan berhasil disimpan!', type: 'success' });
+            } else {
+                throw new Error(result.message || 'Gagal menyimpan pengaturan.');
+            }
+        } catch (error) {
+            setMessage({ text: `Gagal menyimpan: ${error.message}`, type: 'error' });
+        }
+    };
+    
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setSettings(prev => ({ ...prev, [name]: value }));
+    };
+
+    const MapEvents = () => {
+        useMapEvents({
+            click(e) {
+                const { lat, lng } = e.latlng;
+                setPolygonPoints(currentPoints => [...currentPoints, [lat, lng]]);
+            },
+        });
+        return null;
+    };
+
+    const clearPolygon = () => {
+        setPolygonPoints([]);
+    };
+
+    if (isLoading) {
+       return <div className="text-center py-10"><Icon classes="fas fa-spinner fa-spin text-2xl text-blue-500" /> Memuat Pengaturan...</div>;
+    }
+
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Pengaturan Umum</h3>
+            
+            {message.text && (
+                <div className={`p-3 mb-4 text-sm rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {message.text}
+                </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Kolom Pengaturan Tanggal */}
+                <div className="space-y-4">
+                    <h4 className="font-semibold text-lg mb-2">Periode Semester</h4>
+                    <div>
+                        <label htmlFor="school_year_start_date" className="block text-sm font-medium text-gray-700">Tanggal Mulai Semester</label>
+                        <input type="date" id="school_year_start_date" name="school_year_start_date" value={settings.school_year_start_date || ''} onChange={handleInputChange} className="mt-1 block w-full input-field"/>
+                    </div>
+                    <div>
+                        <label htmlFor="school_year_end_date" className="block text-sm font-medium text-gray-700">Tanggal Selesai Semester</label>
+                        <input type="date" id="school_year_end_date" name="school_year_end_date" value={settings.school_year_end_date || ''} onChange={handleInputChange} className="mt-1 block w-full input-field"/>
+                    </div>
+                </div>
+
+                {/* Kolom Pengaturan Lokasi */}
+                <div className="space-y-4">
+                     <h4 className="font-semibold text-lg mb-2">Area Sekolah (Geofence)</h4>
+                     <p className="text-sm text-gray-500">Klik pada peta untuk menambahkan titik-titik yang membentuk area sekolah. Minimal 3 titik untuk membentuk sebuah area.</p>
+                    <div className="h-80 w-full rounded-lg overflow-hidden border">
+                        <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                            <MapEvents />
+                            {polygonPoints.map((pos, index) => <Marker key={index} position={pos} />)}
+                            {polygonPoints.length > 1 && <Polygon positions={polygonPoints} />}
+                        </MapContainer>
+                    </div>
+                    <button onClick={clearPolygon} className="btn-secondary">
+                        <Icon classes="fas fa-trash-alt mr-2" /> Bersihkan Area
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex justify-end mt-6 pt-6 border-t">
+                <button onClick={handleSaveSettings} className="btn-primary-attractive">
+                    Simpan Semua Pengaturan
+                </button>
+            </div>
+        </div>
+    );
+};
 // --- Komponen Manajemen Kelas ---
 const ClassesView = () => {
   const [classes, setClasses] = useState([]);
@@ -1651,10 +1789,6 @@ const AdminSidebar = ({ onNavigate, activeView, onLogout, isSidebarOpen, user })
 
   return (
     <div className={`sidebar bg-white text-gray-800 w-64 min-h-screen shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static fixed md:z-40`}>
-      <div className="p-4 flex items-center space-x-3 border-b border-gray-200">
-        <img src={"https://placehold.co/40x40/4A5568/FFFFFF?text=A"} alt="Logo" className="h-10 w-10 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/ffffff?text=L"; }}/>
-        <span className="logo-text font-bold text-xl text-gray-800">Attendance Admin</span>
-      </div>
       <div className="p-4">
         <div className="flex items-center space-x-3 mb-6">
           <img
@@ -1681,14 +1815,15 @@ const AdminSidebar = ({ onNavigate, activeView, onLogout, isSidebarOpen, user })
 };
 
 // --- Komponen Konten Utama Admin ---
-const AdminMainContent = ({ activeView, onToggleSidebar, onNavigate }) => { // Terima onNavigate
+const AdminMainContent = ({ activeView, onToggleSidebar, onNavigate }) => {
+  // ... (kode di dalamnya tetap sama, hanya tambahkan 'settings' di logika judul dan render)
   let title = "Admin Dashboard";
   if (activeView === 'users') title = "Manajemen Pengguna";
   else if (activeView === 'courses') title = "Manajemen Mata Pelajaran";
   else if (activeView === 'classes') title = "Manajemen Kelas";
   else if (activeView === 'schedules') title = "Manajemen Jadwal";
   else if (activeView === 'reports') title = "Laporan";
-  else if (activeView === 'settings') title = "Pengaturan";
+  else if (activeView === 'settings') title = "Pengaturan"; // Tambahkan ini
 
   return (
     <div className="main-content flex-1 p-4 sm:p-8 bg-gray-100 min-h-screen overflow-y-auto">
@@ -1702,7 +1837,7 @@ const AdminMainContent = ({ activeView, onToggleSidebar, onNavigate }) => { // T
       {activeView === 'classes' && <ClassesView />}
       {activeView === 'schedules' && <SchedulesView />}
       {activeView === 'reports' && <div className="placeholder-view">Tampilan Laporan (Belum Diimplementasikan)</div>}
-      {activeView === 'settings' && <div className="placeholder-view">Tampilan Pengaturan (Belum Diimplementasikan)</div>}
+      {activeView === 'settings' && <SettingsView />} {/* Tambahkan ini */}
     </div>
   );
 };

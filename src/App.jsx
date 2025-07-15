@@ -1,22 +1,56 @@
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import Cookies from 'js-cookie'; // Import library js-cookie
-import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Link } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 
 import Login from './pages/login.jsx';
 import Register from './pages/register.jsx';
 import AdminDashboard from './pages/admin-dashboard.jsx';
 import StudentDashboard from './pages/student-dashboard.jsx';
 import TeacherDashboard from './pages/teacher-dashboard.jsx';
+import ForgotPassword from './pages/forgot-password.jsx';
 
-// URL untuk endpoint logout status
 const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
+
+// 1. Membuat Theme Context
+const ThemeContext = createContext();
+export const useTheme = () => useContext(ThemeContext);
+
+const ThemeProvider = ({ children }) => {
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
+
+    return (
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
+
+// Tombol Toggle Dark Mode
+export const ThemeToggleButton = () => {
+    const { theme, toggleTheme } = useTheme();
+    return (
+        <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            {theme === 'light' ? <i className="fas fa-moon"></i> : <i className="fas fa-sun"></i>}
+        </button>
+    );
+};
+
 
 const DashboardWrapper = ({ DashboardComponent }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const role = Cookies.get('user_role');
@@ -25,73 +59,51 @@ const DashboardWrapper = ({ DashboardComponent }) => {
 
     if (role && name && id) {
       setIsAuthenticated(true);
-      setUserRole(role);
-      setUserName(decodeURIComponent(name)); // Decode nama pengguna
-      setUserId(id);
+      setUser({ id, name: decodeURIComponent(name), role });
     } else {
-      setIsAuthenticated(false);
-      setUserRole(null);
-      setUserName(null);
-      setUserId(null);
-      navigate('/'); // Redirect ke login jika tidak ada cookie
+      navigate('/');
     }
   }, [navigate]);
 
   const handleLogout = async () => {
-    // Panggil API untuk memperbarui status pengguna menjadi 'inactive'
-    if (userId) {
+    if (user?.id) {
       try {
-        const response = await fetch(`${API_BASE_URL}/logout_status.php`, {
+        await fetch(`${API_BASE_URL}/logout_status.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId }),
+          body: JSON.stringify({ user_id: user.id }),
         });
-        const data = await response.json();
-        if (!data.success) {
-          console.error("Gagal memperbarui status logout di backend:", data.message);
-        }
       } catch (error) {
-        console.error("Error saat memanggil API logout status:", error);
+        console.error("Error calling logout API:", error);
       }
     }
-
-    // Hapus cookies dan redirect
     Cookies.remove('user_role');
     Cookies.remove('user_id');
     Cookies.remove('user_name');
-    console.log("Logout berhasil, mengarahkan ke halaman login...");
     navigate('/');
   };
 
-  // Tampilkan loading atau redirect jika belum terautentikasi
   if (!isAuthenticated) {
-    return <div className="flex items-center justify-center min-h-screen text-xl font-medium text-gray-700">Memuat...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Memuat...</div>;
   }
 
-  // Render dashboard yang sesuai jika terautentikasi
-  return <DashboardComponent onLogout={handleLogout} user={{ id: userId, name: userName, role: userRole }} />;
+  return <DashboardComponent onLogout={handleLogout} user={user} />;
 };
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/admin-dashboard"
-          element={<DashboardWrapper DashboardComponent={AdminDashboard} />}
-        />
-        <Route
-          path="/student-dashboard"
-          element={<DashboardWrapper DashboardComponent={StudentDashboard} />}
-        />
-        <Route
-          path="/teacher-dashboard"
-          element={<DashboardWrapper DashboardComponent={TeacherDashboard} />}
-        />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/admin-dashboard" element={<DashboardWrapper DashboardComponent={AdminDashboard} />} />
+          <Route path="/student-dashboard" element={<DashboardWrapper DashboardComponent={StudentDashboard} />} />
+          <Route path="/teacher-dashboard" element={<DashboardWrapper DashboardComponent={TeacherDashboard} />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
