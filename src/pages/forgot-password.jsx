@@ -1,11 +1,11 @@
-// src/pages/forgot-password.jsx (BERKAS DIPERBARUI)
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
 
 export default function ForgotPassword() {
-    const [stage, setStage] = useState('enterEmail'); // 'enterEmail', 'enterCode', 'finished'
+    const [stage, setStage] = useState('enterEmail'); 
     const [email, setEmail] = useState('');
     const [code, setCode] = useState('');
     const [password, setPassword] = useState('');

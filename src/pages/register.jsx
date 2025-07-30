@@ -108,9 +108,7 @@ function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4 font-sans">
         <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-md">
-            <div className="absolute top-4 right-4">
-                <ThemeToggleButton />
-            </div>
+            
             <div className="text-center mb-8">
                 <img 
                     src="src/assets/logo.png" 

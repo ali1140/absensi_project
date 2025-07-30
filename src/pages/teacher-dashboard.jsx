@@ -10,11 +10,11 @@ const WEB_BASE_URL = 'http://localhost/COBAK_REACT/src';
 
 const Icon = ({ classes }) => <i className={classes}></i>;
 
-// PERBAIKAN: Modal Generate Kode dengan pilihan Tipe Kelas
+// Modal Generate Kode dengan pilihan Tipe Kelas
 const GenerateCodeModal = ({ schedule, onClose, onCodeGenerated }) => {
     const [durationType, setDurationType] = useState('schedule_end');
     const [customMinutes, setCustomMinutes] = useState(5);
-    const [classType, setClassType] = useState('Offline'); // State baru untuk tipe kelas
+    const [classType, setClassType] = useState('Offline');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -30,7 +30,7 @@ const GenerateCodeModal = ({ schedule, onClose, onCodeGenerated }) => {
                     schedule_id: schedule.id,
                     duration_type: durationType,
                     custom_minutes: customMinutes,
-                    class_type: classType // Mengirim tipe kelas ke backend
+                    class_type: classType
                 }),
             });
             const data = await response.json();
@@ -48,53 +48,51 @@ const GenerateCodeModal = ({ schedule, onClose, onCodeGenerated }) => {
     };
 
     return (
-        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
-                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
-                <h3 className="text-xl font-semibold mb-4">Buat Sesi Presensi</h3>
-                {error && <p className="text-red-500 text-sm mb-2 p-3 bg-red-100 rounded-md">{error}</p>}
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50 dark:bg-opacity-70">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <button onClick={onClose} className="btn-close-modal-dark"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4 dark:text-white">Buat Sesi Presensi</h3>
+                {error && <p className="text-red-500 text-sm mb-2 p-3 bg-red-100 dark:bg-red-800/30 dark:text-red-300 rounded-md">{error}</p>}
                 
                 <div className="space-y-4">
-                    {/* Pilihan Tipe Kelas */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Tipe Kelas untuk Sesi Ini</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pilih Tipe Kelas untuk Sesi Ini</label>
                         <div className="flex space-x-4">
                             <label className="flex items-center">
                                 <input type="radio" name="classType" value="Offline" checked={classType === 'Offline'} onChange={() => setClassType('Offline')} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"/>
-                                <span className="ml-2 text-gray-700">Offline (Wajib GPS)</span>
+                                <span className="ml-2 text-gray-700 dark:text-gray-300">Offline (Wajib GPS)</span>
                             </label>
                             <label className="flex items-center">
                                 <input type="radio" name="classType" value="Online" checked={classType === 'Online'} onChange={() => setClassType('Online')} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"/>
-                                <span className="ml-2 text-gray-700">Online (Tanpa GPS)</span>
+                                <span className="ml-2 text-gray-700 dark:text-gray-300">Online (Tanpa GPS)</span>
                             </label>
                         </div>
                     </div>
 
-                    <hr/>
+                    <hr className="dark:border-gray-600"/>
 
-                    {/* Pilihan Durasi */}
                     <div>
-                         <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Durasi Kode</label>
-                        <div className="flex items-center p-3 border rounded-lg">
+                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pilih Durasi Kode</label>
+                        <div className="flex items-center p-3 border dark:border-gray-600 rounded-lg">
                             <input type="radio" id="duration_schedule" name="duration" value="schedule_end" checked={durationType === 'schedule_end'} onChange={() => setDurationType('schedule_end')} />
                             <label htmlFor="duration_schedule" className="ml-3">
-                                <p className="font-medium">Sesuai Jam Pelajaran</p>
-                                <p className="text-xs text-gray-500">Kode akan aktif hingga jam pelajaran berakhir ({schedule.end_time_formatted})</p>
+                                <p className="font-medium dark:text-gray-200">Sesuai Jam Pelajaran</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Kode akan aktif hingga jam pelajaran berakhir ({schedule.end_time_formatted})</p>
                             </label>
                         </div>
-                        <div className="flex items-center p-3 border rounded-lg mt-2">
+                        <div className="flex items-center p-3 border dark:border-gray-600 rounded-lg mt-2">
                             <input type="radio" id="duration_custom" name="duration" value="custom" checked={durationType === 'custom'} onChange={() => setDurationType('custom')} />
                             <label htmlFor="duration_custom" className="ml-3 flex-grow">
-                                <p className="font-medium">Atur Sendiri</p>
-                                <p className="text-xs text-gray-500">Tentukan masa berlaku kode dalam menit.</p>
+                                <p className="font-medium dark:text-gray-200">Atur Sendiri</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Tentukan masa berlaku kode dalam menit.</p>
                             </label>
-                            <input type="number" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} disabled={durationType !== 'custom'} className="w-20 p-1 border rounded-md text-center"/>
+                            <input type="number" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} disabled={durationType !== 'custom'} className="w-20 p-1 border rounded-md text-center input-field-dark"/>
                         </div>
                     </div>
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
-                    <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                    <button type="button" onClick={onClose} className="btn-secondary-dark">Batal</button>
                     <button onClick={handleSubmit} disabled={isSubmitting} className="btn-primary-attractive">
                         {isSubmitting ? 'Membuat...' : 'Buat Kode'}
                     </button>
@@ -104,12 +102,6 @@ const GenerateCodeModal = ({ schedule, onClose, onCodeGenerated }) => {
     );
 };
 
-
-// ... (sisa kode tidak berubah)
-// ... Anda bisa menyalin sisa kode dari respons sebelumnya jika perlu,
-// ... atau hanya fokus pada perubahan di atas.
-
-// Komponen Materi Pembelajaran (Guru)
 const MaterialsView = ({ user }) => {
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState('');
@@ -118,7 +110,6 @@ const MaterialsView = ({ user }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        // Ambil daftar mata pelajaran yang diajar guru
         fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${user.id}`)
             .then(res => res.json())
             .then(data => {
@@ -162,15 +153,15 @@ const MaterialsView = ({ user }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id })
             });
-            fetchMaterials(); // Refresh list
+            fetchMaterials();
         }
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h2 className="text-xl font-semibold mb-4">Materi Pembelajaran</h2>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">Materi Pembelajaran</h2>
             <div className="flex justify-between items-center mb-4">
-                <select value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)} className="input-field w-1/3">
+                <select value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)} className="input-field-dark w-1/3">
                     <option value="">Pilih Mata Pelajaran</option>
                     {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -183,17 +174,17 @@ const MaterialsView = ({ user }) => {
                 isLoading ? <div className="text-center py-5"><Icon classes="fas fa-spinner fa-spin"/></div> :
                 <div className="space-y-3">
                     {materials.length > 0 ? materials.map(mat => (
-                        <div key={mat.id} className="p-3 border rounded-lg flex justify-between items-center">
+                        <div key={mat.id} className="p-3 border dark:border-gray-600 rounded-lg flex justify-between items-center">
                             <div>
-                                <h3 className="font-bold">{mat.title}</h3>
-                                <p className="text-sm text-gray-600">{mat.description}</p>
-                                <a href={`${WEB_BASE_URL}/${mat.file_path}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                                <h3 className="font-bold dark:text-white">{mat.title}</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">{mat.description}</p>
+                                <a href={`${WEB_BASE_URL}/${mat.file_path}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
                                     <Icon classes="fas fa-download mr-1"/> Unduh Berkas
                                 </a>
                             </div>
-                            <button onClick={() => handleDelete(mat.id)} className="text-red-500 hover:text-red-700 ml-4"><Icon classes="fas fa-trash"/></button>
+                            <button onClick={() => handleDelete(mat.id)} className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-4"><Icon classes="fas fa-trash"/></button>
                         </div>
-                    )) : <p className="text-center text-gray-500 py-5">Belum ada materi untuk mata pelajaran ini.</p>}
+                    )) : <p className="text-center text-gray-500 dark:text-gray-400 py-5">Belum ada materi untuk mata pelajaran ini.</p>}
                 </div>
             )}
 
@@ -245,26 +236,26 @@ const UploadMaterialModal = ({ courseId, teacherId, onClose, onUploaded }) => {
     };
 
     return (
-        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
-                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
-                <h3 className="text-xl font-semibold mb-4">Unggah Materi Baru</h3>
-                {error && <p className="text-red-500 text-sm mb-2 p-2 bg-red-100 rounded-md">{error}</p>}
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50 dark:bg-opacity-70">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6 relative">
+                <button onClick={onClose} className="btn-close-modal-dark"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4 dark:text-white">Unggah Materi Baru</h3>
+                {error && <p className="text-red-500 text-sm mb-2 p-2 bg-red-100 dark:bg-red-800/30 dark:text-red-300 rounded-md">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium">Judul Materi</label>
-                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field" />
+                        <label className="block text-sm font-medium dark:text-gray-300">Judul Materi</label>
+                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field-dark" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Deskripsi Singkat</label>
-                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows="3" className="mt-1 w-full input-field"></textarea>
+                        <label className="block text-sm font-medium dark:text-gray-300">Deskripsi Singkat</label>
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows="3" className="mt-1 w-full input-field-dark"></textarea>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Pilih Berkas</label>
-                        <input type="file" onChange={e => setFile(e.target.files[0])} required className="mt-1 w-full" />
+                        <label className="block text-sm font-medium dark:text-gray-300">Pilih Berkas</label>
+                        <input type="file" onChange={e => setFile(e.target.files[0])} required className="mt-1 w-full text-gray-900 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/50 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800/50" />
                     </div>
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                        <button type="button" onClick={onClose} className="btn-secondary-dark">Batal</button>
                         <button type="submit" disabled={isUploading} className="btn-primary-attractive">
                             {isUploading ? 'Mengunggah...' : 'Unggah'}
                         </button>
@@ -275,8 +266,6 @@ const UploadMaterialModal = ({ courseId, teacherId, onClose, onUploaded }) => {
     );
 };
 
-
-// Komponen Pengaturan Akun
 const SettingsView = ({ user }) => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -325,25 +314,25 @@ const SettingsView = ({ user }) => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border max-w-lg mx-auto">
-            <h2 className="text-xl font-semibold mb-4">Ubah Password</h2>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700 max-w-lg mx-auto">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">Ubah Password</h2>
             {message.text && (
-                <div className={`p-3 mb-4 text-sm rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <div className={`p-3 mb-4 text-sm rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-800/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-800/30 dark:text-red-300'}`}>
                     {message.text}
                 </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium">Password Saat Ini</label>
-                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                    <label className="block text-sm font-medium dark:text-gray-300">Password Saat Ini</label>
+                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="mt-1 w-full input-field-dark" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium">Password Baru</label>
-                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                    <label className="block text-sm font-medium dark:text-gray-300">Password Baru</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="mt-1 w-full input-field-dark" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium">Konfirmasi Password Baru</label>
-                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="mt-1 w-full input-field" />
+                    <label className="block text-sm font-medium dark:text-gray-300">Konfirmasi Password Baru</label>
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="mt-1 w-full input-field-dark" />
                 </div>
                 <div className="flex justify-end">
                     <button type="submit" disabled={isLoading} className="btn-primary-attractive">
@@ -355,8 +344,6 @@ const SettingsView = ({ user }) => {
     );
 };
 
-
-// Komponen Laporan Presensi
 const AttendanceReportView = ({ teacherId }) => {
     const [classes, setClasses] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
@@ -366,7 +353,6 @@ const AttendanceReportView = ({ teacherId }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        // Ambil daftar kelas yang diajar guru
         fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${teacherId}`)
             .then(res => res.json())
             .then(data => {
@@ -436,28 +422,29 @@ const AttendanceReportView = ({ teacherId }) => {
     };
     
     const statusStyle = {
-        'Present': 'bg-green-100 text-green-800', 'Absent': 'bg-red-100 text-red-800',
-        'Excused': 'bg-orange-100 text-orange-800'
+        'Present': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 
+        'Absent': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+        'Excused': 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h2 className="text-xl font-semibold mb-4">Laporan Presensi</h2>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">Laporan Presensi</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
                 <div>
-                    <label className="block text-sm font-medium">Kelas</label>
-                    <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className="mt-1 w-full input-field">
+                    <label className="block text-sm font-medium dark:text-gray-300">Kelas</label>
+                    <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className="mt-1 w-full input-field-dark">
                         <option value="">Pilih Kelas</option>
                         {classes.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium">Tanggal Mulai</label>
-                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 w-full input-field" />
+                    <label className="block text-sm font-medium dark:text-gray-300">Tanggal Mulai</label>
+                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 w-full input-field-dark" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium">Tanggal Selesai</label>
-                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 w-full input-field" />
+                    <label className="block text-sm font-medium dark:text-gray-300">Tanggal Selesai</label>
+                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 w-full input-field-dark" />
                 </div>
                 <button onClick={handleGenerateReport} disabled={isLoading} className="btn-primary-attractive h-10">
                     {isLoading ? "Memuat..." : "Tampilkan Laporan"}
@@ -472,22 +459,22 @@ const AttendanceReportView = ({ teacherId }) => {
                         </button>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-700/50">
                                 <tr>
-                                    <th className="th-cell">Tanggal</th>
-                                    <th className="th-cell">Nama Siswa</th>
-                                    <th className="th-cell">Mata Pelajaran</th>
-                                    <th className="th-cell">Status</th>
+                                    <th className="th-cell-dark">Tanggal</th>
+                                    <th className="th-cell-dark">Nama Siswa</th>
+                                    <th className="th-cell-dark">Mata Pelajaran</th>
+                                    <th className="th-cell-dark">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {reportData.map((item, index) => (
                                     <tr key={item.id || index}>
-                                        <td className="td-cell">{item.attendance_date}</td>
-                                        <td className="td-cell">{item.student_name}</td>
-                                        <td className="td-cell">{item.course_name}</td>
-                                        <td className="td-cell">
+                                        <td className="td-cell-dark">{item.attendance_date}</td>
+                                        <td className="td-cell-dark">{item.student_name}</td>
+                                        <td className="td-cell-dark">{item.course_name}</td>
+                                        <td className="td-cell-dark">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyle[item.status] || 'bg-gray-100'}`}>{item.status}</span>
                                         </td>
                                     </tr>
@@ -501,7 +488,6 @@ const AttendanceReportView = ({ teacherId }) => {
     );
 };
 
-// Komponen Pengumuman
 const AnnouncementsView = ({ user }) => {
     const [announcements, setAnnouncements] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -517,7 +503,6 @@ const AnnouncementsView = ({ user }) => {
 
     useEffect(() => {
         fetchAnnouncements();
-        // Ambil kelas yang diajar guru
         fetch(`${API_BASE_URL}/penjadwalan/get_schedules.php?teacher_id=${user.id}`)
             .then(res => res.json())
             .then(data => {
@@ -542,27 +527,27 @@ const AnnouncementsView = ({ user }) => {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Pengumuman Saya</h2>
+                <h2 className="text-xl font-semibold dark:text-white">Pengumuman Saya</h2>
                 <button onClick={() => setIsModalOpen(true)} className="btn-primary-attractive">
                     <Icon classes="fas fa-plus mr-2" /> Buat Pengumuman
                 </button>
             </div>
             <div className="space-y-4">
                 {announcements.length > 0 ? announcements.map(item => (
-                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                    <div key={item.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border dark:border-gray-700">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h3 className="font-bold">{item.title}</h3>
-                                <p className="text-sm text-gray-500">Untuk Kelas: {item.class_level}</p>
-                                <p className="mt-2">{item.content}</p>
+                                <h3 className="font-bold dark:text-white">{item.title}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Untuk Kelas: {item.class_level}</p>
+                                <p className="mt-2 dark:text-gray-300">{item.content}</p>
                             </div>
-                            <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700">
+                            <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
                                 <Icon classes="fas fa-trash" />
                             </button>
                         </div>
-                        <p className="text-xs text-gray-400 text-right mt-2">Dibuat pada: {new Date(item.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 text-right mt-2">Dibuat pada: {new Date(item.created_at).toLocaleString()}</p>
                     </div>
-                )) : <p className="text-center text-gray-500 py-5 bg-white rounded-lg">Belum ada pengumuman.</p>}
+                )) : <p className="text-center text-gray-500 dark:text-gray-400 py-5 bg-white dark:bg-gray-800 rounded-lg">Belum ada pengumuman.</p>}
             </div>
             {isModalOpen && <CreateAnnouncementModal user={user} classes={classes} onClose={() => setIsModalOpen(false)} onSaved={fetchAnnouncements} />}
         </div>
@@ -591,28 +576,28 @@ const CreateAnnouncementModal = ({ user, classes, onClose, onSaved }) => {
     };
 
     return (
-        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
-                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
-                <h3 className="text-xl font-semibold mb-4">Buat Pengumuman Baru</h3>
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50 dark:bg-opacity-70">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6 relative">
+                <button onClick={onClose} className="btn-close-modal-dark"><Icon classes="fas fa-times" /></button>
+                <h3 className="text-xl font-semibold mb-4 dark:text-white">Buat Pengumuman Baru</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium">Judul</label>
-                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field" />
+                        <label className="block text-sm font-medium dark:text-gray-300">Judul</label>
+                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="mt-1 w-full input-field-dark" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Isi Pengumuman</label>
-                        <textarea value={content} onChange={e => setContent(e.target.value)} required rows="4" className="mt-1 w-full input-field"></textarea>
+                        <label className="block text-sm font-medium dark:text-gray-300">Isi Pengumuman</label>
+                        <textarea value={content} onChange={e => setContent(e.target.value)} required rows="4" className="mt-1 w-full input-field-dark"></textarea>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium">Tujukan Untuk Kelas</label>
-                        <select value={targetClass} onChange={e => setTargetClass(e.target.value)} className="mt-1 w-full input-field">
+                        <label className="block text-sm font-medium dark:text-gray-300">Tujukan Untuk Kelas</label>
+                        <select value={targetClass} onChange={e => setTargetClass(e.target.value)} className="mt-1 w-full input-field-dark">
                             <option value="Semua Kelas">Semua Kelas yang Diajar</option>
                             {classes.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                     </div>
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                        <button type="button" onClick={onClose} className="btn-secondary-dark">Batal</button>
                         <button type="submit" className="btn-primary-attractive">Kirim</button>
                     </div>
                 </form>
@@ -629,22 +614,22 @@ const ScheduleCalendar = ({ schedules = [], isLoading }) => {
     }, {}), [schedules, daysOfWeek]);
 
     if (isLoading) return <div className="text-center p-10"><Icon classes="fas fa-spinner fa-spin text-2xl text-blue-500" /></div>;
-    if (schedules.length === 0) return <div className="text-center text-gray-500 p-10">Tidak ada jadwal mengajar yang ditemukan.</div>;
+    if (schedules.length === 0) return <div className="text-center text-gray-500 dark:text-gray-400 p-10">Tidak ada jadwal mengajar yang ditemukan.</div>;
 
     return (
         <div className="overflow-x-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {daysOfWeek.map(day => (
-                    <div key={day} className="bg-gray-50 rounded-lg p-3 min-h-[150px]">
-                        <h3 className="font-semibold text-center text-gray-700 border-b pb-2 mb-3">{day}</h3>
+                    <div key={day} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 min-h-[150px]">
+                        <h3 className="font-semibold text-center text-gray-700 dark:text-gray-300 border-b dark:border-gray-700 pb-2 mb-3">{day}</h3>
                         <div className="space-y-3">
                             {schedulesByDay[day] && schedulesByDay[day].length > 0 ? schedulesByDay[day].map(schedule => (
-                                <div key={schedule.id} className="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-500">
-                                    <p className="font-bold text-sm text-gray-800">{schedule.course_name}</p>
-                                    <p className="text-xs text-gray-600">{schedule.student_class_level}</p>
-                                    <p className="text-xs text-gray-500 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
+                                <div key={schedule.id} className="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm border-l-4 border-blue-500 dark:border-blue-400">
+                                    <p className="font-bold text-sm text-gray-800 dark:text-white">{schedule.course_name}</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-300">{schedule.student_class_level}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
                                 </div>
-                            )) : <p className="text-xs text-gray-400 text-center py-4">Libur</p>}
+                            )) : <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Libur</p>}
                         </div>
                     </div>
                 ))}
@@ -708,36 +693,36 @@ const ClassDetailView = ({ schedule, onClose }) => {
     }, [roster]);
 
     return (
-        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col relative" style={{maxHeight: '90vh'}}>
-                <button onClick={onClose} className="btn-close-modal"><Icon classes="fas fa-times" /></button>
-                <div className="p-4 border-b">
-                    <h3 className="text-xl font-semibold text-gray-800">{schedule.course_name}</h3>
-                    <p className="text-sm text-gray-600">{schedule.student_class_level}</p>
+        <div id="modal-backdrop" className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50 dark:bg-opacity-70">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl flex flex-col relative" style={{maxHeight: '90vh'}}>
+                <button onClick={onClose} className="btn-close-modal-dark"><Icon classes="fas fa-times" /></button>
+                <div className="p-4 border-b dark:border-gray-700">
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{schedule.course_name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{schedule.student_class_level}</p>
                 </div>
-                <div className="p-4 grid grid-cols-3 gap-2 text-center border-b">
-                    <div><p className="font-bold text-green-600 text-lg">{attendanceSummary.Present || 0}</p><p className="text-xs">Hadir</p></div>
-                    <div><p className="font-bold text-red-600 text-lg">{attendanceSummary.Absent || 0}</p><p className="text-xs">Absen</p></div>
-                    <div><p className="font-bold text-orange-600 text-lg">{attendanceSummary.Excused || 0}</p><p className="text-xs">Izin</p></div>
+                <div className="p-4 grid grid-cols-3 gap-2 text-center border-b dark:border-gray-700">
+                    <div><p className="font-bold text-green-600 dark:text-green-400 text-lg">{attendanceSummary.Present || 0}</p><p className="text-xs dark:text-gray-300">Hadir</p></div>
+                    <div><p className="font-bold text-red-600 dark:text-red-400 text-lg">{attendanceSummary.Absent || 0}</p><p className="text-xs dark:text-gray-300">Absen</p></div>
+                    <div><p className="font-bold text-orange-600 dark:text-orange-400 text-lg">{attendanceSummary.Excused || 0}</p><p className="text-xs dark:text-gray-300">Izin</p></div>
                 </div>
                 <div className="p-4 overflow-y-auto">
                     {isLoading ? <div className="text-center"><Icon classes="fas fa-spinner fa-spin" /></div> :
                     <table className="min-w-full">
-                        <thead>
+                        <thead className="dark:text-gray-300">
                             <tr>
-                                <th className="text-left text-xs font-medium text-gray-500 uppercase py-2">Nama Siswa</th>
-                                <th className="text-left text-xs font-medium text-gray-500 uppercase py-2 w-32">Status</th>
+                                <th className="text-left text-xs font-medium uppercase py-2">Nama Siswa</th>
+                                <th className="text-left text-xs font-medium uppercase py-2 w-32">Status</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {roster.map(student => (
                                 <tr key={student.student_id}>
-                                    <td className="py-2 text-sm">{student.student_name}</td>
+                                    <td className="py-2 text-sm dark:text-gray-200">{student.student_name}</td>
                                     <td>
                                         <select 
                                             value={student.attendance_status} 
                                             onChange={(e) => handleStatusChange(student.student_id, e.target.value)}
-                                            className="w-full p-1 border rounded-md text-xs"
+                                            className="w-full p-1 border rounded-md text-xs input-field-dark"
                                         >
                                             <option value="Present">Hadir</option>
                                             <option value="Absent">Absen</option>
@@ -796,7 +781,6 @@ const ManageAttendanceView = ({ schedules = [], isLoading, teacherId }) => {
         }
     }, [todaySchedules, generatedCodes]);
 
-
     const isWithinTimeRange = useCallback((schedule) => {
         const now = currentTime;
         const startTime = new Date(`${now.toDateString()} ${schedule.start_time}`);
@@ -853,39 +837,39 @@ const ManageAttendanceView = ({ schedules = [], isLoading, teacherId }) => {
 
     return (
         <>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Sesi Presensi Hari Ini ({todayString})</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Sesi Presensi Hari Ini ({todayString})</h2>
                 {todaySchedules.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500"><Icon classes="fas fa-calendar-times text-4xl mb-3" /><p>Tidak ada jadwal mengajar hari ini.</p></div>
+                    <div className="text-center py-10 text-gray-500 dark:text-gray-400"><Icon classes="fas fa-calendar-times text-4xl mb-3" /><p>Tidak ada jadwal mengajar hari ini.</p></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {todaySchedules.map(schedule => {
                             const canGenerate = isWithinTimeRange(schedule);
                             const session = generatedCodes[schedule.id];
                             return (
-                                <div key={schedule.id} className={`p-4 rounded-lg shadow-md flex flex-col justify-between border ${canGenerate && !session ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                                <div key={schedule.id} className={`p-4 rounded-lg shadow-md flex flex-col justify-between border ${canGenerate && !session ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'}`}>
                                     <div>
-                                        <p className="font-bold text-gray-800">{schedule.course_name}</p>
-                                        <p className="text-sm text-gray-600">{schedule.student_class_level}</p>
-                                        <p className="text-sm text-gray-500 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
+                                        <p className="font-bold text-gray-800 dark:text-white">{schedule.course_name}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">{schedule.student_class_level}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1"><Icon classes="far fa-clock mr-1" />{schedule.start_time_formatted} - {schedule.end_time_formatted}</p>
                                     </div>
-                                    <div className="mt-4 pt-4 border-t space-y-2">
+                                    <div className="mt-4 pt-4 border-t dark:border-gray-600 space-y-2">
                                         {session ? (
                                             <div className="text-center">
-                                                <p className="text-sm text-gray-600 mb-2">Kode Presensi:</p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Kode Presensi:</p>
                                                 <div className="flex justify-center space-x-1 mb-2">
                                                     {session.code.split('').map((digit, i) => (
-                                                        <span key={i} className="w-9 h-10 flex items-center justify-center text-xl font-bold border bg-white text-blue-800 rounded-md shadow-inner">{digit}</span>
+                                                        <span key={i} className="w-9 h-10 flex items-center justify-center text-xl font-bold border bg-white text-blue-800 dark:bg-gray-700 dark:text-blue-200 dark:border-gray-600 rounded-md shadow-inner">{digit}</span>
                                                     ))}
                                                 </div>
-                                                <p className="text-xs text-red-600">Berlaku hingga: <CountdownTimer expiryTimestamp={session.expires_at} onExpiry={() => handleExpiry(schedule.id)} /></p>
+                                                <p className="text-xs text-red-600 dark:text-red-400">Berlaku hingga: <CountdownTimer expiryTimestamp={session.expires_at} onExpiry={() => handleExpiry(schedule.id)} /></p>
                                             </div>
                                         ) : (
                                             <button onClick={() => setModal({ type: 'generate', data: schedule })} disabled={!canGenerate} className="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed" title={canGenerate ? "Buat kode presensi" : "Hanya bisa dibuka saat jam pelajaran"}>
                                                 <Icon classes="fas fa-magic mr-2" />Generate Code
                                             </button>
                                         )}
-                                        <button onClick={() => setModal({ type: 'detail', data: schedule })} className="w-full bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition hover:bg-gray-300">
+                                        <button onClick={() => setModal({ type: 'detail', data: schedule })} className="w-full bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
                                             <Icon classes="fas fa-edit mr-2" />Kelola Manual
                                         </button>
                                     </div>
@@ -901,8 +885,6 @@ const ManageAttendanceView = ({ schedules = [], isLoading, teacherId }) => {
     );
 };
 
-
-// Komponen Utama Dasbor Guru
 export default function TeacherDashboard({ onLogout, user }) {
     const [activeView, setActiveView] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -937,10 +919,10 @@ export default function TeacherDashboard({ onLogout, user }) {
                 return (
                     <>
                         <div className="grid md:grid-cols-2 gap-6 mb-8">
-                            <div className="bg-white p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p>Total Kelas Diajar</p><h3 className="text-2xl font-bold mt-1">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_classes}</h3></div><div className="p-3 rounded-full bg-blue-50 text-blue-600"><Icon classes="fas fa-chalkboard-teacher text-xl" /></div></div></div>
-                            <div className="bg-white p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p>Total Mata Pelajaran</p><h3 className="text-2xl font-bold mt-1">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_courses}</h3></div><div className="p-3 rounded-full bg-green-50 text-green-600"><Icon classes="fas fa-book-open text-xl" /></div></div></div>
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p className="dark:text-gray-300">Total Kelas Diajar</p><h3 className="text-2xl font-bold mt-1 dark:text-white">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_classes}</h3></div><div className="p-3 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300"><Icon classes="fas fa-chalkboard-teacher text-xl" /></div></div></div>
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm"><div className="flex items-center justify-between"><div><p className="dark:text-gray-300">Total Mata Pelajaran</p><h3 className="text-2xl font-bold mt-1 dark:text-white">{isLoading.stats ? <Icon classes="fas fa-spinner fa-spin" /> : dashboardStats.total_courses}</h3></div><div className="p-3 rounded-full bg-green-50 dark:bg-green-900/50 text-green-600 dark:text-green-300"><Icon classes="fas fa-book-open text-xl" /></div></div></div>
                         </div>
-                        <div className="bg-white rounded-xl shadow-sm p-6"><h2 className="text-xl font-semibold mb-4">Jadwal Mengajar Mingguan</h2><ScheduleCalendar schedules={scheduleData} isLoading={isLoading.schedule} /></div>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"><h2 className="text-xl font-semibold mb-4 dark:text-white">Jadwal Mengajar Mingguan</h2><ScheduleCalendar schedules={scheduleData} isLoading={isLoading.schedule} /></div>
                     </>
                 );
             case 'manage-attendance':
@@ -959,18 +941,43 @@ export default function TeacherDashboard({ onLogout, user }) {
     };
 
     return (
-        <div className="flex min-h-screen font-sans text-gray-900 bg-gray-100">
-            <div className={`sidebar bg-white w-64 min-h-screen shadow-lg transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static z-40`}>
+        <div className="flex min-h-screen font-sans text-gray-900 bg-gray-100 dark:bg-gray-900 dark:text-gray-200">
+            <div className={`sidebar bg-white dark:bg-gray-800 w-64 min-h-screen shadow-lg transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static z-40`}>
                 <div className="p-4">
-                    <div className="flex items-center space-x-3 mb-6"><img src={teacherUser.avatarUrl} alt="User" className="h-12 w-12 rounded-full" /><div><p className="font-medium">{teacherUser.name}</p><p className="text-sm text-gray-500">{teacherUser.role}</p></div></div>
-                    <nav className="space-y-2">{teacherNavItems.map(item => <a key={item.name} href="#" onClick={(e) => { e.preventDefault(); handleNavigate(item.view); }} className={`flex items-center space-x-3 p-3 rounded-lg ${activeView === item.view ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}><Icon classes={`${item.icon} w-5 text-center`} /><span>{item.name}</span></a>)}</nav>
+                    <div className="flex items-center space-x-3 mb-6"><img src={teacherUser.avatarUrl} alt="User" className="h-12 w-12 rounded-full" /><div><p className="font-medium dark:text-white">{teacherUser.name}</p><p className="text-sm text-gray-500 dark:text-gray-400">{teacherUser.role}</p></div></div>
+                    <nav className="space-y-2">{teacherNavItems.map(item => <a key={item.name} href="#" onClick={(e) => { e.preventDefault(); handleNavigate(item.view); }} className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${activeView === item.view ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300'}`}><Icon classes={`${item.icon} w-5 text-center`} /><span>{item.name}</span></a>)}</nav>
                 </div>
-                <div className="absolute bottom-0 w-full p-4 border-t"><button onClick={onLogout} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 w-full"><Icon classes="fas fa-sign-out-alt w-5 text-center" /><span>Logout</span></button></div>
+                <div className="absolute bottom-0 w-full p-4 border-t dark:border-gray-700"><button onClick={onLogout} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 w-full dark:text-gray-300"><Icon classes="fas fa-sign-out-alt w-5 text-center" /><span>Logout</span></button></div>
             </div>
             <div className="main-content flex-1 p-4 sm:p-8 overflow-y-auto">
-                <div className="flex justify-between items-center mb-8"><h1 className="text-2xl font-bold">{teacherNavItems.find(item => item.view === activeView)?.name || 'Dashboard'}</h1><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg md:hidden"><Icon classes="fas fa-bars" /></button></div>
+                <div className="flex justify-between items-center mb-8"><h1 className="text-2xl font-bold dark:text-white">{teacherNavItems.find(item => item.view === activeView)?.name || 'Dashboard'}</h1><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg md:hidden hover:bg-gray-200 dark:hover:bg-gray-700"><Icon classes="fas fa-bars" /></button></div>
                 {renderContent()}
             </div>
         </div>
     );
 }
+
+// Helper CSS classes for dark mode consistency
+/*
+.input-field-dark {
+  @apply mt-1 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+}
+.th-cell-dark {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider;
+}
+.td-cell-dark {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white;
+}
+.btn-secondary-dark {
+  @apply px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
+}
+.btn-primary-attractive {
+   @apply px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+}
+.btn-success-attractive {
+  @apply px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700;
+}
+.btn-close-modal-dark {
+  @apply absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white;
+}
+*/

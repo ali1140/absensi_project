@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Gaya dasar Anda yang sudah ada */
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
@@ -23,7 +22,6 @@ body {
   @apply text-gray-700 bg-white p-6 rounded-xl shadow-sm;
 }
 
-/* Tombol yang lebih menarik */
 .btn-primary-attractive {
   @apply flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white font-semibold
          rounded-lg shadow-md hover:bg-blue-700 hover:shadow-xl
@@ -50,13 +48,67 @@ body {
            transition-all duration-150 ease-in-out;
 }
 
-/* PERUBAHAN: Menambahkan gaya untuk tombol kembali */
 .btn-back {
     @apply inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all;
 }
 
+.input-field-dark {
+    @apply mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+  }
 
-/* Latar belakang modal dengan efek blur */
+  .th-cell-dark {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider;
+  }
+
+  .td-cell-dark {
+    @apply px-6 py-4 whitespace-nowrap text-sm;
+  }
+  
+  .btn-secondary-dark {
+    @apply px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
+  }
+
+  .btn-primary-attractive {
+     @apply px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+  }
+
 #modal-backdrop {
-  backdrop-filter: blur(1px) brightness(0.9);
+  background-color: rgba(0, 0, 0, 0.3); 
+  backdrop-filter: blur(1px);
+}
+.input-field-dark {
+  @apply mt-1 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+}
+
+.btn-secondary-dark {
+  @apply px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
+}
+
+.btn-primary-attractive {
+   @apply px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+}
+
+.btn-close-modal-dark {
+  @apply absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white;
+}
+.input-field-dark {
+  @apply mt-1 w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+}
+.th-cell-dark {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider;
+}
+.td-cell-dark {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white;
+}
+.btn-secondary-dark {
+  @apply px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
+}
+.btn-primary-attractive {
+   @apply px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+}
+.btn-success-attractive {
+  @apply px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700;
+}
+.btn-close-modal-dark {
+  @apply absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white;
 }
