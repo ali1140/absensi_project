@@ -1,5 +1,4 @@
 <?php
-// src/get_class_roster_with_attendance.php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -18,7 +17,6 @@ if (!$class_level || !$start_date || !$end_date) {
     exit();
 }
 
-// 1. Dapatkan semua siswa di kelas ini
 $sql_students = "SELECT id, name FROM users WHERE role = 'student' AND student_class_level = ? ORDER BY name ASC";
 $stmt_students = $conn->prepare($sql_students);
 $stmt_students->bind_param("s", $class_level);
@@ -35,7 +33,6 @@ if (empty($students)) {
     exit();
 }
 
-// 2. Dapatkan data absensi untuk siswa-siswa tersebut pada rentang tanggal
 $student_ids = array_keys($students);
 $placeholders = implode(',', array_fill(0, count($student_ids), '?'));
 

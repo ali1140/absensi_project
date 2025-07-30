@@ -26,20 +26,18 @@ if ($schedule_id === 0) {
     exit;
 }
 
-// Hapus sesi yang sudah kedaluwarsa untuk jadwal ini terlebih dahulu
 $delete_stmt = $conn->prepare("DELETE FROM attendance_sessions WHERE schedule_id = ? AND expires_at <= NOW()");
 $delete_stmt->bind_param("i", $schedule_id);
 $delete_stmt->execute();
 $delete_stmt->close();
 
 
-// Cek sesi aktif yang sudah ada untuk jadwal ini
 $check_stmt = $conn->prepare("SELECT id FROM attendance_sessions WHERE schedule_id = ? AND expires_at > NOW()");
 $check_stmt->bind_param("i", $schedule_id);
 $check_stmt->execute();
 $check_result = $check_stmt->get_result();
 if ($check_result->num_rows > 0) {
-    http_response_code(409); // Conflict
+    http_response_code(409); 
     echo json_encode(['success' => false, 'message' => 'Sudah ada sesi presensi yang aktif untuk kelas ini.']);
     $check_stmt->close();
     $conn->close();
@@ -47,7 +45,6 @@ if ($check_result->num_rows > 0) {
 }
 $check_stmt->close();
 
-// Fungsi untuk membuat kode unik 6 digit
 function generateUniqueCode($conn) {
     do {
         $code = '';
@@ -65,7 +62,6 @@ function generateUniqueCode($conn) {
 
 $code = generateUniqueCode($conn);
 
-// Menghitung waktu kedaluwarsa
 $expiry_time = new DateTime();
 if ($duration_type === 'schedule_end') {
     $schedule_stmt = $conn->prepare("SELECT end_time FROM schedules WHERE id = ?");
@@ -83,7 +79,6 @@ if ($duration_type === 'schedule_end') {
 $expiry_time_mysql = $expiry_time->format('Y-m-d H:i:s');
 
 
-// Masukkan sesi baru ke database
 $stmt = $conn->prepare("INSERT INTO attendance_sessions (schedule_id, generated_code, expires_at, class_type) VALUES (?, ?, ?, ?)");
 $stmt->bind_param("isss", $schedule_id, $code, $expiry_time_mysql, $class_type);
 
