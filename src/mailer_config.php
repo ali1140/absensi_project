@@ -19,8 +19,8 @@ function send_verification_code($email, $code) {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com'; // Ganti dengan host SMTP Anda
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'your_email@gmail.com'; // Ganti dengan email Anda
-        $mail->Password   = 'YOUR_APP_PASSWORD';   // Ganti dengan App Password Gmail Anda
+        $mail->Username   = 'your_email@gmail.com'; // [REDACTED] Ganti dengan email Anda
+        $mail->Password   = 'YOUR_APP_PASSWORD';   // [REDACTED] Ganti dengan App Password Gmail Anda
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
 
