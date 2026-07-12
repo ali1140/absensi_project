@@ -48,9 +48,24 @@ services:
     networks:
       - absensi_network
 
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: absensi_filebrowser
+    restart: always
+    ports:
+      - "8082:80"
+    volumes:
+      - /home/liali/nas-storage:/srv
+      - filebrowser_db:/database
+    environment:
+      - FB_DATABASE=/database/filebrowser.db
+    networks:
+      - absensi_network
+
 volumes:
   db_data:
   uploads_data:
+  filebrowser_db:
 
 networks:
   absensi_network:
