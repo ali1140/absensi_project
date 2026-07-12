@@ -44,14 +44,14 @@ if (isset($data['email'], $data['password'])) {
             setcookie('user_role', $user['role'], [
                 'expires' => time() + 3600, // 1 jam
                 'path' => '/',
-                'httponly' => true, // Melindungi dari serangan XSS
+                'httponly' => false, // Diubah ke false agar JavaScript (React) bisa membacanya
                 'samesite' => 'Lax' // Atau 'Strict', tergantung kebutuhan
             ]);
             // Set cookie untuk user_id
             setcookie('user_id', $user['id'], [
                 'expires' => time() + 3600,
                 'path' => '/',
-                'httponly' => true,
+                'httponly' => false, // Diubah ke false agar JavaScript (React) bisa membacanya
                 'samesite' => 'Lax'
             ]);
              // Set cookie untuk user_name (tidak httponly karena mungkin dibutuhkan frontend)
