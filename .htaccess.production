@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Exclude /src/ folder from rewrite rules so PHP requests go through
+  RewriteCond %{REQUEST_URI} ^/src/ [NC]
+  RewriteRule .* - [L]
+
+  # Route React routing paths to index.html (fallback)
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

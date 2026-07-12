@@ -1,8 +1,8 @@
 <?php
-$servername = "localhost"; 
-$username = "root";        
-$password = "";            
-$dbname = "attendance_system"; 
+$servername = getenv('DB_HOST') ?: "localhost"; 
+$username = getenv('DB_USER') ?: "root";        
+$password = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "";            
+$dbname = getenv('DB_NAME') ?: "attendance_system"; 
 
 
 $conn = new mysqli($servername, $username, $password, $dbname);

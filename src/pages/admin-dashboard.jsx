@@ -7,8 +7,8 @@ import { MapContainer, TileLayer, Marker, Polygon, useMapEvents } from 'react-le
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 // URL base untuk script PHP Anda di Laragon.
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC'; // Untuk users, stats
-const MODULE_API_BASE_URL = `http://localhost/COBAK_REACT/SRC/penjadwalan`; // Untuk courses, schedules, dan classes
+const API_BASE_URL = '/src'; // Untuk users, stats
+const MODULE_API_BASE_URL = `/src/penjadwalan`; // Untuk courses, schedules, dan classes
 
 // Komponen Helper untuk Ikon (menggunakan class Font Awesome)
 const Icon = ({ classes }) => <i className={classes}></i>;

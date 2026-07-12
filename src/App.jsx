@@ -9,7 +9,7 @@ import StudentDashboard from './pages/student-dashboard.jsx';
 import TeacherDashboard from './pages/teacher-dashboard.jsx';
 import ForgotPassword from './pages/forgot-password.jsx';
 
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
+const API_BASE_URL = '/src';
 
 // 1. Membuat Theme Context
 const ThemeContext = createContext();

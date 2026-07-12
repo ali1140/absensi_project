@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ThemeToggleButton } from '../App.jsx'; // Impor tombol tema
 
-const MODULE_API_BASE_URL = `http://localhost/COBAK_REACT/SRC/penjadwalan`;
+const MODULE_API_BASE_URL = `/src/penjadwalan`;
 
 function Register() {
   const [firstName, setFirstName] = useState('');
@@ -74,7 +74,7 @@ function Register() {
     const fullName = `${firstName} ${lastName}`.trim();
 
     try {
-      const response = await fetch('http://localhost/COBAK_REACT/SRC/register.php', {
+      const response = await fetch('/src/register.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
+const API_BASE_URL = '/src';
 
 export default function ResetPassword() {
     const { token } = useParams();

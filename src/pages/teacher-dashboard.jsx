@@ -5,8 +5,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
-const WEB_BASE_URL = 'http://localhost/COBAK_REACT/src'; 
+const API_BASE_URL = '/src';
+const WEB_BASE_URL = '/src'; 
 
 const Icon = ({ classes }) => <i className={classes}></i>;
 

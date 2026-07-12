@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: absensi_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password_placeholder
+      MARIADB_DATABASE: attendance_system
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d
+    networks:
+      - absensi_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: absensi_web
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root_password_placeholder
+      DB_NAME: attendance_system
+    volumes:
+      - uploads_data:/var/www/html/src/uploads
+    depends_on:
+      - db
+    networks:
+      - absensi_network
+
+volumes:
+  db_data:
+  uploads_data:
+
+networks:
+  absensi_network:
+    driver: bridge

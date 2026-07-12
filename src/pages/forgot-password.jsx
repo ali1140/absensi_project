@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
+const API_BASE_URL = '/src';
 
 export default function ForgotPassword() {
     const [stage, setStage] = useState('enterEmail'); 

@@ -13,7 +13,7 @@ export default function Login() {
     setErrorMessage('');
 
     try {
-      const response = await fetch('http://localhost/COBAK_REACT/SRC/login.php', {
+      const response = await fetch('/src/login.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

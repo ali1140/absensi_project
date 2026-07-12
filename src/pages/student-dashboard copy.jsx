@@ -11,8 +11,8 @@ import { ThemeToggleButton } from '../App.jsx';
 // Fix untuk ikon marker default Leaflet yang rusak dengan React
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const API_BASE_URL = 'http://localhost/COBAK_REACT/SRC';
-const WEB_BASE_URL = 'http://localhost/COBAK_REACT/src';
+const API_BASE_URL = '/src';
+const WEB_BASE_URL = '/src';
 
 const Icon = ({ classes }) => <i className={classes}></i>;
 delete L.Icon.Default.prototype._getIconUrl;

@@ -8,12 +8,17 @@ export default defineConfig({
     react()
   ], // <-- Pastikan ada koma di sini
 
-  // --- TAMBAHKAN BLOK INI ---
   server: {
     host: true,
     allowedHosts: [
       '.ply.gg'
-    ]
+    ],
+    proxy: {
+      '/src': {
+        target: 'http://localhost/COBAK_REACT/SRC',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/src/, '')
+      }
+    }
   }
-  // --------------------------
 })
